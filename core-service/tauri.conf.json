@@ -1,0 +1,57 @@
+{
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "AI Security",
+    "version": "0.1.0",
+    "identifier": "com.aisecurity.app",
+    "build": {
+        "beforeDevCommand": {
+            "script": "npm run dev",
+            "cwd": "../web-app"
+        },
+        "devUrl": "http://localhost:5173",
+        "beforeBuildCommand": {
+            "script": "npm run build",
+            "cwd": "../web-app"
+        },
+        "frontendDist": "../web-app/dist"
+    },
+    "app": {
+        "windows": [
+            {
+                "title": "AI Security - Anomaly Detection",
+                "width": 1280,
+                "height": 720,
+                "minWidth": 1024,
+                "minHeight": 576,
+                "resizable": true,
+                "fullscreen": false,
+                "decorations": false,
+                "transparent": false,
+                "center": true
+            }
+        ],
+        "security": {
+            "csp": null
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": "all",
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ],
+        "resources": [
+            "../assets/scripts/**/*",
+            "../assets/data/**/*"
+        ],
+        "windows": {
+            "certificateThumbprint": null,
+            "digestAlgorithm": "sha256",
+            "timestampUrl": ""
+        }
+    }
+}

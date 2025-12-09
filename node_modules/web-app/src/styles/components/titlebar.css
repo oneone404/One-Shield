@@ -1,0 +1,81 @@
+/* ============================================
+   Custom TitleBar - Style Fixes
+   ============================================ */
+
+.titlebar {
+    height: 32px;
+    background: var(--bg-app);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    user-select: none;
+    transition: background-color 0.3s ease;
+}
+
+/* DRAG REGION */
+.titlebar-drag-region {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+}
+
+.titlebar-logo {
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+/* CONTROLS */
+.titlebar-controls {
+    display: flex;
+    height: 100%;
+    -webkit-app-region: no-drag;
+    z-index: 10002;
+}
+
+.titlebar-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 46px;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-app-region: no-drag;
+}
+
+/* Hover States */
+.titlebar-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+/* Light Theme Specifics */
+html[data-theme="light"] .titlebar-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    /* Light grey hover for Min/Max */
+    color: #000;
+}
+
+/* CLOSE BUTTON - Critical Overlay */
+/* Must use !important or high specificity to ensure Red Hover works in all themes */
+.titlebar-btn.close:hover {
+    background-color: #e81123 !important;
+    color: white !important;
+}
+
+.titlebar-btn:active {
+    opacity: 0.8;
+}

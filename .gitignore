@@ -1,0 +1,18 @@
+# Rust / Tauri
+core-service/target/
+**/*.rs.bk
+
+# Node / Web App
+web-app/node_modules/
+web-app/dist/
+web-app/.env.local
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

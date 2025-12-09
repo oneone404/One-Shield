@@ -1,0 +1,189 @@
+/* ============================================
+   Header - Clean Unified Style
+   ============================================ */
+
+.header {
+    position: sticky;
+    top: 0;
+    height: var(--header-height);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 40;
+    margin-bottom: 24px;
+}
+
+.header-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Unified Search Group */
+.header-search-group {
+    display: flex;
+    align-items: center;
+    background: var(--bg-panel);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 0 8px;
+    /* Compact padding */
+    height: 40px;
+    width: 260px;
+    transition: all 0.2s;
+}
+
+.header-search-group:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.search-icon {
+    color: var(--text-secondary);
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.search-input {
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 14px;
+    padding: 0 12px;
+    width: 100%;
+    outline: none;
+}
+
+.search-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--glass-border);
+    margin: 0 4px;
+}
+
+.theme-toggle-small {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.theme-toggle-small:hover {
+    background: var(--glass-highlight);
+    color: var(--text-primary);
+}
+
+/* Notification Button */
+.header-icon-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-panel);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.header-icon-btn:hover {
+    background: var(--glass-highlight);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    background: var(--danger);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg-app);
+}
+
+/* Control Button */
+.control-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.control-btn.start {
+    background: var(--primary);
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+}
+
+.control-btn.start:hover {
+    background: #4f46e5;
+    transform: translateY(-1px);
+}
+
+.control-btn.stop {
+    background: var(--bg-panel);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+.control-btn.stop:hover {
+    background: var(--danger);
+    color: white;
+}
+
+/* Hide search on tablet */
+@media (max-width: 1024px) {
+    .header-search-group {
+        width: 40px;
+        /* Collapse to icon only or hide if needed */
+        padding: 0;
+        justify-content: center;
+    }
+
+    .search-input,
+    .search-divider {
+        display: none;
+    }
+
+    .search-icon {
+        margin: 0;
+    }
+
+    .theme-toggle-small {
+        display: none;
+    }
+
+    /* Handle mobile theme toggle differently if needed */
+}
