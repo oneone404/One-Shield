@@ -25,6 +25,7 @@
 // Core modules
 pub mod collector;
 pub mod baseline;
+pub mod dataset;
 pub mod guard;
 pub mod ai_bridge;
 pub mod action_guard;

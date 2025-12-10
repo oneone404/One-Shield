@@ -229,6 +229,9 @@ pub fn compare_with_baseline(features: &FeatureVector) -> Vec<AnomalyTag> {
     tags
 }
 
+use crate::logic::dataset::{self, DatasetRecord};
+use crate::logic::threat::ThreatClass;
+
 /// Analyze summary with machine learning score
 pub fn analyze_summary(
     summary_id: &str,
@@ -274,6 +277,34 @@ pub fn analyze_summary(
     history.push(result.clone());
     if history.len() > 1000 {
         history.drain(0..500);
+    }
+    drop(history); // Release lock before logging IO
+
+    // P1.3: LOG DATASET (Training Data)
+    if let Some(baseline) = get_versioned_baseline() {
+        let diff: Vec<f32> = features.values.iter()
+            .zip(baseline.mean.iter())
+            .map(|(f, m)| f - m)
+            .collect();
+
+        let threat = if final_score >= 0.8 {
+            ThreatClass::Malicious
+        } else if final_score >= 0.6 {
+            ThreatClass::Suspicious
+        } else {
+            ThreatClass::Benign
+        };
+
+        dataset::log(DatasetRecord {
+            timestamp: Utc::now().timestamp() as u64,
+            feature_version: features.version,
+            layout_hash: features.layout_hash,
+            features: features.values.to_vec(),
+            baseline_diff: diff,
+            score: final_score,
+            confidence: result.confidence,
+            threat,
+        });
     }
 
     result
