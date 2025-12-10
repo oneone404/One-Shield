@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::logic::threat::ThreatClass;
+use crate::logic::explain::ExplainResult;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum IncidentStatus {
@@ -36,11 +37,14 @@ pub struct Incident {
     pub severity: Severity,
     pub status: IncidentStatus,
 
+    // P3.2 Explainability
+    pub explanation: Option<ExplainResult>,
+
     pub records: Vec<DatasetRecordSummary>,
 }
 
 impl Incident {
-    pub fn new(first_record: DatasetRecordSummary) -> Self {
+    pub fn new(first_record: DatasetRecordSummary, explanation: Option<ExplainResult>) -> Self {
         let severity = Self::map_severity(&first_record);
         Self {
             incident_id: Uuid::new_v4(),
@@ -48,6 +52,7 @@ impl Incident {
             last_seen: first_record.ts,
             severity,
             status: IncidentStatus::Open,
+            explanation,
             records: vec![first_record],
         }
     }
@@ -57,7 +62,6 @@ impl Incident {
             self.last_seen = record.ts;
         }
 
-        // Escalation Logic (Always escalate, never de-escalate automatically)
         let new_severity = Self::map_severity(&record);
         if self.severity_level(&new_severity) > self.severity_level(&self.severity) {
             self.severity = new_severity;

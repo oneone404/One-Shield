@@ -86,6 +86,28 @@ export function IncidentPanel() {
                                 <h3>Incident Details</h3>
                                 <span className="uuid">{detail.incident_id}</span>
                             </div>
+
+                            {/* P3.2 Explainability Section */}
+                            {detail.explanation && (
+                                <div className="explanation-section">
+                                    <h4>Why was this detected?</h4>
+                                    <div className="features-list">
+                                        {detail.explanation.contributions.map((feat, idx) => (
+                                            <div key={idx} className="feat-item">
+                                                <div className="feat-row">
+                                                    <span className="feat-name">{feat.name}</span>
+                                                    <span className="feat-val">{feat.delta > 0 ? '+' : ''}{feat.delta.toFixed(2)}</span>
+                                                </div>
+                                                <div className="feat-desc">{feat.description || "Anomaly detected"}</div>
+                                                <div className="feat-bar-bg">
+                                                    <div className="feat-bar" style={{ width: `${Math.min(feat.importance * 30, 100)}%` }}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="timeline">
                                 {detail.records.map((rec, idx) => (
                                     <div key={idx} className="tl-event" style={{ animationDelay: `${idx * 0.05}s` }}>

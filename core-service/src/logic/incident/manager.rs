@@ -6,6 +6,7 @@ use chrono::Utc;
 use super::types::{Incident, DatasetRecordSummary};
 use crate::logic::threat::ThreatClass;
 use crate::logic::dataset::DatasetRecord;
+use crate::logic::explain::explain;
 
 // Global Incident Manager (In-Memory for P3.1)
 static MANAGER: Mutex<Option<IncidentManager>> = Mutex::new(None);
@@ -37,6 +38,9 @@ impl IncidentManager {
             tags: tags.to_vec(),
         };
 
+        // P3.2 Explainability (Why detected?)
+        let explanation = explain(record);
+
         // Rule: Group by time window (60s)
         let mut target_id = None;
         let now = summary.ts;
@@ -52,9 +56,14 @@ impl IncidentManager {
         if let Some(id) = target_id {
             if let Some(inc) = self.active.get_mut(&id) {
                 inc.update(summary);
+                // If new record has explanation and higher score, maybe update?
+                // For now: Keep first explanation if exists
+                if inc.explanation.is_none() {
+                    inc.explanation = explanation;
+                }
             }
         } else {
-            let inc = Incident::new(summary);
+            let inc = Incident::new(summary, explanation);
             self.active.insert(inc.incident_id, inc);
         }
     }
