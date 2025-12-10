@@ -19,4 +19,7 @@ pub struct DatasetRecord {
 
     // ✅ Final decision
     pub threat: ThreatClass,
+
+    // ✅ User Override (P2.2.3)
+    pub user_label: Option<String>,
 }

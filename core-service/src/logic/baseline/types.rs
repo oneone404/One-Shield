@@ -148,6 +148,13 @@ pub struct AnalysisResult {
     pub confidence: f32,
     pub severity_level: String,
     pub analyzed_at: String, // ISO 8601 string
+
+    // Captured features for replay/training (P2.2.3)
+    #[serde(default)]
+    pub features: Vec<f32>,
+
+    #[serde(default)]
+    pub baseline_diff: Vec<f32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -164,6 +164,7 @@ fn main() {
             // Engine Status (P2.1)
             commands::get_engine_status,
             commands::export_dataset,
+            commands::submit_user_feedback,
         ])
         .run(tauri::generate_context!())
         .expect("Lỗi khi khởi chạy ứng dụng Tauri");

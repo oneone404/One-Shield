@@ -29,50 +29,6 @@ pub use types::{
     LegacyBaselineProfile as BaselineProfile // Alias for backward compat
 };
 
-#[derive(serde::Serialize)]
-pub struct BaselineStatus {
-    pub status: String,
-    pub feature_version: u8,
-    pub layout_hash: u32,
-    pub samples_learned: u64,
-    pub last_reset: String,
-}
-
-// ... existing code ...
-
-pub fn get_status() -> BaselineStatus {
-    init();
-    let global = GLOBAL_BASELINE.read();
-
-    if let Some(b) = global.as_ref() {
-        let status = if b.samples < 100 {
-            "Warming Up".to_string()
-        } else {
-            "Stable".to_string()
-        };
-
-        BaselineStatus {
-            status,
-            feature_version: b.feature_version,
-            layout_hash: b.layout_hash,
-            samples_learned: b.samples,
-            last_reset: chrono::DateTime::from_timestamp(b.created_at, 0)
-                .map(|d| d.to_rfc3339())
-                .unwrap_or_else(|| "Never".to_string()),
-        }
-    } else {
-        BaselineStatus {
-            status: "Not Loaded".to_string(),
-            feature_version: 0,
-            layout_hash: 0,
-            samples_learned: 0,
-            last_reset: "Unknown".to_string(),
-        }
-    }
-}
-
-
-
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -305,53 +261,80 @@ pub fn analyze_summary(
         tag_score,
         final_score,
         is_anomaly,
-        tags: tag_strings,
-        tag_details: tags.iter().map(|t| TagDetail {
-            tag: t.to_string(),
-            severity: t.severity(),
-            description: t.description().to_string(),
-        }).collect(),
-        confidence: 1.0 - (ml_score - tag_score).abs(),
-        severity_level: if final_score >= 0.8 { "Critical" } else if final_score >= 0.6 { "High" } else { "Medium" }.to_string(),
-        analyzed_at: Utc::now().to_rfc3339(),
+        tags: tags.iter().map(|t| t.to_string()).collect(),
+        tag_details,
+        confidence,
+        severity_level: severity.clone(),
+        analyzed_at: chrono::Utc::now().to_rfc3339(),
+        features: features.values.to_vec(),
+        baseline_diff: baseline_diff.clone(),
     };
 
-    // Store history
-    let mut history = ANALYSIS_HISTORY.write();
-    history.push(result.clone());
-    if history.len() > 1000 {
-        history.drain(0..500);
+    // Update History (Rolling buffer 1000)
+    {
+        let mut history = ANALYSIS_HISTORY.write();
+        history.push(result.clone());
+        if history.len() > 1000 {
+            history.drain(0..500);
+        }
     }
-    drop(history); // Release lock before logging IO
 
-    // P1.3: LOG DATASET (Training Data)
-    if let Some(baseline) = get_versioned_baseline() {
-        let diff: Vec<f32> = features.values.iter()
-            .zip(baseline.mean.iter())
-            .map(|(f, m)| f - m)
-            .collect();
-
+    // P1.3: Dataset Logging (Automated)
+    {
         let threat = if final_score >= 0.8 {
             ThreatClass::Malicious
-        } else if final_score >= 0.6 {
+        } else if final_score >= 0.5 {
             ThreatClass::Suspicious
         } else {
             ThreatClass::Benign
         };
 
-        dataset::log(DatasetRecord {
-            timestamp: Utc::now().timestamp() as u64,
+        let record = DatasetRecord {
+            timestamp: chrono::Utc::now().timestamp_millis() as u64,
             feature_version: features.version,
             layout_hash: features.layout_hash,
             features: features.values.to_vec(),
-            baseline_diff: diff,
+            baseline_diff,
             score: final_score,
-            confidence: result.confidence,
+            confidence,
             threat,
-        });
+            user_label: None,
+        };
+        dataset::log(record);
     }
 
     result
+}
+
+// P2.2.3: Label Override Logic
+pub fn override_label(summary_id: &str, user_label: String) -> Result<(), String> {
+    let history = ANALYSIS_HISTORY.lock(); // Changed from .read() to .lock()
+    if let Some(result) = history.iter().find(|r| r.summary_id == summary_id) {
+        let threat = if result.final_score >= 0.8 {
+            ThreatClass::Malicious
+        } else if result.final_score >= 0.5 {
+            ThreatClass::Suspicious
+        } else {
+            ThreatClass::Benign
+        };
+
+        let record = DatasetRecord {
+            timestamp: chrono::Utc::now().timestamp_millis() as u64,
+            feature_version: crate::logic::features::layout::FEATURE_VERSION,
+            layout_hash: crate::logic::features::layout::layout_hash(),
+            features: result.features.clone(),
+            baseline_diff: result.baseline_diff.clone(),
+            score: result.final_score,
+            confidence: result.confidence,
+            threat,
+            user_label: Some(user_label),
+        };
+
+        crate::logic::dataset::log(record);
+        Ok(())
+    } else {
+        Err("Analysis ID not found".to_string())
+    }
 }
 
 fn calculate_tag_score(tags: &[AnomalyTag]) -> f32 {

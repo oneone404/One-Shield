@@ -280,6 +280,14 @@ pub async fn get_engine_status() -> Result<crate::api::engine_status::EngineStat
     Ok(crate::logic::status::collect::collect())
 }
 
+/// Submit user feedback/override for a threat detection (P2.2.3)
+#[tauri::command]
+pub async fn submit_user_feedback(id: String, label: String) -> Result<String, String> {
+    crate::logic::baseline::override_label(&id, label.clone())
+        .map_err(|e| e)
+        .map(|_| format!("Feedback '{}' submitted for ID {}", label, id))
+}
+
 /// Export full dataset to a single JSONL file for training (P2.2)
 #[tauri::command]
 pub async fn export_dataset(path: String) -> Result<String, String> {
