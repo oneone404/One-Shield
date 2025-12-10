@@ -10,7 +10,8 @@ mod integration_tests {
         network::NetworkFeatures,
         disk::DiskFeatures,
         process::ProcessFeatures,
-        vector::{FeatureExtractor, FeatureVector, FEATURE_COUNT},
+        layout::FEATURE_COUNT,
+        vector::{FeatureExtractor, FeatureVector},
     };
 
     /// Test tất cả extractors hoạt động cùng nhau
