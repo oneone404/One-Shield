@@ -271,6 +271,16 @@ pub async fn get_summary_logs(limit: Option<u32>, _offset: Option<u32>) -> Resul
 }
 
 // ============================================================================
+// ENGINE STATUS COMMANDS (P2.1)
+// ============================================================================
+
+/// Get full engine status snapshot
+#[tauri::command]
+pub async fn get_engine_status() -> Result<crate::api::engine_status::EngineStatus, String> {
+    Ok(crate::logic::status::collect::collect())
+}
+
+// ============================================================================
 // BASELINE COMMANDS
 // ============================================================================
 

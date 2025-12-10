@@ -41,3 +41,9 @@ pub use config::PolicyConfig;
 pub use engine::{decide, decide_with_config, decide_simple, get_recommended_action};
 
 pub use rules::{PolicyRule, CryptoMiningRule, RansomwareRule, apply_rules};
+
+pub fn get_status() -> PolicyConfig {
+    // P2.1 Placeholder: Return default config.
+    // In future, this should return the active config from a global state.
+    PolicyConfig::default()
+}

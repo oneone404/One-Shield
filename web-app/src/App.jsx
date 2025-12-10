@@ -5,7 +5,8 @@ import TitleBar from './components/TitleBar'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import ApprovalModal from './components/ApprovalModal'
-import Dashboard from './pages/Dashboard'
+// import Dashboard from './pages/Dashboard'
+import { AiDashboard, SecurityLogs } from './components'
 
 import * as api from './services/tauriApi'
 import { useActionGuard } from './hooks/useActionGuard'
@@ -110,7 +111,8 @@ function App() {
 
   const renderPage = () => {
     switch (activePage) {
-      case 'dashboard': return <Dashboard isMonitoring={isMonitoring} />
+      case 'dashboard': return <AiDashboard isMonitoring={isMonitoring} />
+      case 'logs': return <SecurityLogs />
       default: return <PagePlaceholder title={getPageTitle()} />
     }
   }

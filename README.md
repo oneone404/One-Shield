@@ -210,6 +210,7 @@ AI Score → ThreatClass → Policy Decision
 * ✅ **Feature Versioning (P1.1)**: Centralized `layout.rs` & versioned `FeatureVector`
 * ✅ **Safe Baseline (P1.2)**: `logic/baseline` refactored with version check
 * ✅ **Dataset Logging (P1.3)**: Real-time AI training data collector with rotation & versioning
+* ✅ **AI Dashboard (P2.1)**: Real-time UI for Engine/Baseline/Dataset status
 * ✅ **Auto-Recovery**: Reset baseline on layout mismatch
 * ✅ **Stability**: 120+ tests passed (Features + Baseline + Telemetry + Dataset)
 

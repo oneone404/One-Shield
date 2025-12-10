@@ -160,6 +160,9 @@ fn main() {
             commands::get_security_analytics,
             commands::get_security_log_files,
             commands::get_recent_security_events,
+
+            // Engine Status (P2.1)
+            commands::get_engine_status,
         ])
         .run(tauri::generate_context!())
         .expect("Lỗi khi khởi chạy ứng dụng Tauri");

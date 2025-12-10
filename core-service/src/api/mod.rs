@@ -15,6 +15,7 @@
 //! - Keep `v1` for old clients
 
 pub mod commands;
+pub mod engine_status;
 pub mod v1;
 
 // Re-export current version as default

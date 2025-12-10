@@ -29,6 +29,50 @@ pub use types::{
     LegacyBaselineProfile as BaselineProfile // Alias for backward compat
 };
 
+#[derive(serde::Serialize)]
+pub struct BaselineStatus {
+    pub status: String,
+    pub feature_version: u8,
+    pub layout_hash: u32,
+    pub samples_learned: u64,
+    pub last_reset: String,
+}
+
+// ... existing code ...
+
+pub fn get_status() -> BaselineStatus {
+    init();
+    let global = GLOBAL_BASELINE.read();
+
+    if let Some(b) = global.as_ref() {
+        let status = if b.samples < 100 {
+            "Warming Up".to_string()
+        } else {
+            "Stable".to_string()
+        };
+
+        BaselineStatus {
+            status,
+            feature_version: b.feature_version,
+            layout_hash: b.layout_hash,
+            samples_learned: b.samples,
+            last_reset: chrono::DateTime::from_timestamp(b.created_at, 0)
+                .map(|d| d.to_rfc3339())
+                .unwrap_or_else(|| "Never".to_string()),
+        }
+    } else {
+        BaselineStatus {
+            status: "Not Loaded".to_string(),
+            feature_version: 0,
+            layout_hash: 0,
+            samples_learned: 0,
+            last_reset: "Unknown".to_string(),
+        }
+    }
+}
+
+
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================

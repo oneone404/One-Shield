@@ -9,6 +9,7 @@ import {
     NetworkCard,
     GpuCard,
     AiStatusCard,
+    AiEngineStatus,
     UsageChart
 } from '../components'
 
@@ -111,6 +112,9 @@ export default function Dashboard({ isMonitoring }) {
 
     return (
         <div className="dashboard-container">
+            {/* AI Engine Observability (P2.1) */}
+            <AiEngineStatus />
+
             {/* Main Stats Grid */}
             <div className="dashboard-grid">
                 <CpuCard usage={stats.cpu} cpuName={stats.cpuName} />

@@ -78,6 +78,37 @@ impl DatasetWriter {
         Ok(())
     }
 
+    pub fn get_stats(&self) -> io::Result<(usize, f32, String)> {
+        let mut count = 0;
+        let mut size = 0u64;
+        let mut latest_file = String::from("None");
+
+        let entries = fs::read_dir(&self.base_dir)?;
+        let mut entry_paths = Vec::new();
+
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                if path.extension().map_or(false, |e| e == "jsonl") {
+                    count += 1;
+                    if let Ok(meta) = entry.metadata() {
+                        size += meta.len();
+                    }
+                    entry_paths.push(path);
+                }
+            }
+        }
+
+        if let Some(last) = entry_paths.iter().max() {
+            latest_file = last.file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("Unknown")
+                .to_string();
+        }
+
+        Ok((count, size as f32 / 1024.0 / 1024.0, latest_file))
+    }
+
     fn create_new_file(&self) -> io::Result<File> {
         let now = Utc::now();
         // timestamp format: YYYY-MM-DD-HHMMSS
