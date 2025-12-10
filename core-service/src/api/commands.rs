@@ -288,6 +288,18 @@ pub async fn submit_user_feedback(id: String, label: String) -> Result<String, S
         .map(|_| format!("Feedback '{}' submitted for ID {}", label, id))
 }
 
+// P3.1: Incident API
+#[tauri::command]
+pub async fn get_incidents() -> Result<Vec<crate::logic::incident::Incident>, String> {
+    Ok(crate::logic::incident::get_incidents())
+}
+
+#[tauri::command]
+pub async fn get_incident_detail(id: String) -> Result<Option<crate::logic::incident::Incident>, String> {
+    let uuid = uuid::Uuid::parse_str(&id).map_err(|e| e.to_string())?;
+    Ok(crate::logic::incident::get_incident(uuid))
+}
+
 /// Export full dataset to a single JSONL file for training (P2.2)
 #[tauri::command]
 pub async fn export_dataset(path: String) -> Result<String, String> {

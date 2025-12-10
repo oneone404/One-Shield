@@ -165,6 +165,8 @@ fn main() {
             commands::get_engine_status,
             commands::export_dataset,
             commands::submit_user_feedback,
+            commands::get_incidents,
+            commands::get_incident_detail,
         ])
         .run(tauri::generate_context!())
         .expect("Lỗi khi khởi chạy ứng dụng Tauri");

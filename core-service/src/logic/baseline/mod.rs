@@ -246,6 +246,12 @@ pub fn analyze_summary(
     let final_score = ML_WEIGHT * ml_score + TAG_WEIGHT * tag_score;
     let is_anomaly = final_score >= ANOMALY_THRESHOLD;
 
+    let tag_details: Vec<TagDetail> = tags.iter().map(|t| TagDetail {
+        tag: t.to_string(),
+        severity: t.severity(),
+        description: t.description().to_string(),
+    }).collect();
+
     // Update baseline if safe
     if final_score < BASELINE_UPDATE_THRESHOLD {
         update_global_baseline(features);
@@ -255,16 +261,24 @@ pub fn analyze_summary(
         ANOMALY_COUNT.fetch_add(1, Ordering::SeqCst);
     }
 
+    // Tính toán baseline diff nếu có baseline
+    let global_baseline_guard = GLOBAL_BASELINE.read();
+    let baseline_diff = if let Some(b) = global_baseline_guard.as_ref() {
+        features.values.iter().zip(b.mean.iter()).map(|(f, m)| f - m).collect()
+    } else {
+        vec![0.0; features.values.len()]
+    };
+
     let result = AnalysisResult {
         summary_id: summary_id.to_string(),
         ml_score,
         tag_score,
         final_score,
         is_anomaly,
-        tags: tags.iter().map(|t| t.to_string()).collect(),
-        tag_details,
-        confidence,
-        severity_level: severity.clone(),
+        tags: tag_strings.clone(),
+        tag_details: tag_details.clone(),
+        confidence: 1.0 - (ml_score - tag_score).abs(),
+        severity_level: if final_score >= 0.8 { "Critical" } else if final_score >= 0.6 { "High" } else { "Medium" }.to_string(),
         analyzed_at: chrono::Utc::now().to_rfc3339(),
         features: features.values.to_vec(),
         baseline_diff: baseline_diff.clone(),
@@ -293,14 +307,18 @@ pub fn analyze_summary(
             timestamp: chrono::Utc::now().timestamp_millis() as u64,
             feature_version: features.version,
             layout_hash: features.layout_hash,
-            features: features.values.to_vec(),
+            features: features.values.to_vec(), // Clone values
             baseline_diff,
             score: final_score,
-            confidence,
+            confidence: result.confidence,
             threat,
-            user_label: None,
+            user_label: None, // Added user_label
         };
-        dataset::log(record);
+        // Log to dataset (ground truth)
+        dataset::log(record.clone());
+
+        // P3.1: Correlation Engine
+        crate::logic::incident::process_event(&record, &tag_strings);
     }
 
     result
@@ -308,7 +326,7 @@ pub fn analyze_summary(
 
 // P2.2.3: Label Override Logic
 pub fn override_label(summary_id: &str, user_label: String) -> Result<(), String> {
-    let history = ANALYSIS_HISTORY.lock(); // Changed from .read() to .lock()
+    let history = ANALYSIS_HISTORY.read();
     if let Some(result) = history.iter().find(|r| r.summary_id == summary_id) {
         let threat = if result.final_score >= 0.8 {
             ThreatClass::Malicious

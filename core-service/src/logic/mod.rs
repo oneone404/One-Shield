@@ -38,6 +38,7 @@ pub mod policy;
 
 // Telemetry & Logging (NEW)
 pub mod telemetry;
+pub mod incident;
 
 // Feature extraction
 pub mod features;

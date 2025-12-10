@@ -6,4 +6,5 @@ export { default as GpuCard } from './GpuCard'
 export { default as AiStatusCard } from './AiStatusCard'
 export { default as UsageChart } from './UsageChart'
 export { default as AiEngineStatus } from './AiEngineStatus';
+export { IncidentPanel } from './IncidentPanel';
 export { default as SecurityLogs } from './SecurityLogs'

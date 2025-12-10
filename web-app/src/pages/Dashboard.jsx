@@ -10,7 +10,8 @@ import {
     GpuCard,
     AiStatusCard,
     AiEngineStatus,
-    UsageChart
+    UsageChart,
+    IncidentPanel
 } from '../components'
 
 /* ============================================================================
@@ -114,6 +115,9 @@ export default function Dashboard({ isMonitoring }) {
         <div className="dashboard-container">
             {/* AI Engine Observability (P2.1) */}
             <AiEngineStatus />
+
+            {/* Incident Monitor (P3.1) */}
+            <IncidentPanel />
 
             {/* Main Stats Grid */}
             <div className="dashboard-grid">
