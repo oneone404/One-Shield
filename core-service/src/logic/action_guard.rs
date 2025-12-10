@@ -17,6 +17,9 @@ use serde::{Deserialize, Serialize};
 use super::threat::{self, AnomalyScore, BaselineDiff, ThreatContext, ThreatClass, ClassificationResult};
 use super::policy::{self, Decision, PolicyResult, PolicyConfig};
 
+// Telemetry imports (v0.6.1)
+use super::telemetry::{self, SecurityEvent, ProcessInfo as TelemetryProcessInfo, AiContext};
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -777,6 +780,13 @@ pub fn execute_action(
             "expires_at": pending_clone.expires_at.to_rfc3339(),
         }));
 
+        // Record telemetry event
+        telemetry::record(SecurityEvent::action_created(
+            TelemetryProcessInfo::new(target_pid.unwrap_or(0), target_name),
+            action_type,
+            false, // not auto-execute
+        ));
+
         return Ok(ActionResult {
             success: true,
             action_type,
@@ -848,6 +858,12 @@ pub fn approve_action(action_id: &str) -> Result<ActionResult, ActionError> {
 
     let action = pending.remove(idx);
 
+    // Record telemetry: user approved
+    telemetry::record(SecurityEvent::user_approved(
+        TelemetryProcessInfo::new(action.target_pid, &action.target_name),
+        action.action_type,
+    ));
+
     // Execute
     execute_action(
         action.action_type,
@@ -862,6 +878,15 @@ pub fn approve_action(action_id: &str) -> Result<ActionResult, ActionError> {
 /// Cancel pending action
 pub fn cancel_action(action_id: &str) -> Result<(), ActionError> {
     let mut pending = PENDING_ACTIONS.write();
+
+    // Find and record before removing
+    if let Some(action) = pending.iter().find(|a| a.id == action_id) {
+        telemetry::record(SecurityEvent::user_denied(
+            TelemetryProcessInfo::new(action.target_pid, &action.target_name),
+            action.action_type,
+        ));
+    }
+
     pending.retain(|a| a.id != action_id);
     Ok(())
 }

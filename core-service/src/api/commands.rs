@@ -868,3 +868,89 @@ pub async fn get_ai_status() -> Result<serde_json::Value, String> {
     }))
 }
 
+// ============================================================================
+// TELEMETRY COMMANDS (v0.6.1)
+// ============================================================================
+
+use crate::logic::telemetry;
+
+/// Get telemetry recorder stats
+#[tauri::command]
+pub async fn get_telemetry_stats() -> Result<serde_json::Value, String> {
+    let stats = telemetry::stats();
+    Ok(serde_json::json!({
+        "events_recorded": stats.events_recorded,
+        "current_file": stats.current_file,
+        "session_id": stats.session_id,
+    }))
+}
+
+/// Get security analytics summary
+#[tauri::command]
+pub async fn get_security_analytics() -> Result<serde_json::Value, String> {
+    // Get log directory
+    let log_dir = dirs::data_local_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("ai-security")
+        .join("security_logs");
+
+    match telemetry::generate_analytics(&log_dir) {
+        Ok(summary) => Ok(serde_json::json!({
+            "total_events": summary.total_events,
+            "threats_detected": summary.threats_detected,
+            "actions_executed": summary.actions_executed,
+            "user_approvals": summary.user_approvals,
+            "user_denials": summary.user_denials,
+            "user_overrides": summary.user_overrides,
+            "override_rate": summary.override_rate,
+            "approval_rate": summary.approval_rate,
+        })),
+        Err(e) => Err(format!("Failed to generate analytics: {}", e)),
+    }
+}
+
+/// Get list of security log files
+#[tauri::command]
+pub async fn get_security_log_files() -> Result<Vec<String>, String> {
+    let log_dir = dirs::data_local_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("ai-security")
+        .join("security_logs");
+
+    match telemetry::list_log_files(&log_dir) {
+        Ok(files) => Ok(files.iter()
+            .map(|p| p.to_string_lossy().to_string())
+            .collect()),
+        Err(e) => Err(format!("Failed to list log files: {}", e)),
+    }
+}
+
+/// Get recent security events
+#[tauri::command]
+pub async fn get_recent_security_events(limit: Option<usize>) -> Result<serde_json::Value, String> {
+    let log_file = telemetry::current_log_file();
+
+    match log_file {
+        Some(path) => {
+            match telemetry::read_events(&path) {
+                Ok(events) => {
+                    let limit = limit.unwrap_or(50);
+                    let start = if events.len() > limit { events.len() - limit } else { 0 };
+                    let recent: Vec<_> = events[start..].iter().collect();
+
+                    Ok(serde_json::json!({
+                        "count": recent.len(),
+                        "events": recent,
+                    }))
+                }
+                Err(e) => Err(format!("Failed to read events: {}", e)),
+            }
+        }
+        None => Ok(serde_json::json!({
+            "count": 0,
+            "events": [],
+            "message": "No log file available",
+        })),
+    }
+}
+

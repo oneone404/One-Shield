@@ -66,6 +66,14 @@ fn main() {
             // Initialize event system with AppHandle
             logic::events::init(app.handle().clone());
             log::info!("Event system initialized");
+
+            // Initialize telemetry (security logging)
+            if let Err(e) = logic::telemetry::init(None) {
+                log::warn!("Telemetry init failed: {} - events will not be recorded", e);
+            } else {
+                log::info!("Telemetry system initialized");
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -146,6 +154,12 @@ fn main() {
             // Training Data Commands
             commands::export_training_data,
             commands::get_training_data_count,
+
+            // Telemetry Commands (v0.6.1)
+            commands::get_telemetry_stats,
+            commands::get_security_analytics,
+            commands::get_security_log_files,
+            commands::get_recent_security_events,
         ])
         .run(tauri::generate_context!())
         .expect("Lỗi khi khởi chạy ứng dụng Tauri");
