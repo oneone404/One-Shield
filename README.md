@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.6.1-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-orange.svg)
 ![React](https://img.shields.io/badge/React-18-61dafb.svg)
@@ -29,6 +29,7 @@
 * 📈 **Baseline Learning**: Tự học hành vi bình thường
 * 🎮 **GPU Monitoring**: NVIDIA GPU (temp, power, VRAM, fan)
 * 🔒 **Confidence Guard**: Giảm false positives bằng kiểm tra độ tin cậy
+* 📝 **Security Telemetry**: Audit trail, analytics, training data collection
 
 ---
 
@@ -128,6 +129,7 @@ PS/
 | `threat/`      | Chuyển **AI score + context** → `ThreatClass` |
 | `policy/`      | Chuyển `ThreatClass` → `Decision`             |
 | `action_guard` | Thực thi hành động an toàn                    |
+| `telemetry/`   | Audit trail & analytics                       |
 
 ---
 
@@ -203,12 +205,22 @@ AI Score → ThreatClass → Policy Decision
 
 ## 📝 Changelog
 
-### v0.6.0 (Current)
+### v0.6.1 (Current)
+
+* ✅ **Security Telemetry** module
+  - SecurityEvent struct (14 event types)
+  - Append-only JSONL recorder
+  - Export: CSV, JSON, training data
+  - Analytics: approval rate, override rate
+* ✅ Telemetry API commands
+* ✅ SecurityLogs UI component
+* ✅ 55 unit tests
+
+### v0.6.0
 
 * ✅ Modular `threat/` & `policy/`
 * ✅ Confidence Guard
 * ✅ Extensible security rules
-* ✅ 43 unit tests – behavior preserved
 * ✅ Clean EDR-style separation
 
 ### v0.5.x
