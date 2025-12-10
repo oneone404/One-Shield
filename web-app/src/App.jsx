@@ -5,8 +5,7 @@ import TitleBar from './components/TitleBar'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import ApprovalModal from './components/ApprovalModal'
-// import Dashboard from './pages/Dashboard'
-import { AiDashboard, SecurityLogs } from './components'
+import Dashboard from './pages/Dashboard'
 
 import * as api from './services/tauriApi'
 import { useActionGuard } from './hooks/useActionGuard'
@@ -61,8 +60,11 @@ function App() {
       try {
         await new Promise(resolve => setTimeout(resolve, 100));
         await api.invoke('show_main_window');
+        // Auto-start Monitoring (v1.0 Experience)
+        await api.startCollector();
+        setIsMonitoring(true);
       } catch (e) {
-        console.error("Failed to show window", e);
+        console.error("Failed to init", e);
       }
     };
     showWindow();
@@ -111,8 +113,7 @@ function App() {
 
   const renderPage = () => {
     switch (activePage) {
-      case 'dashboard': return <AiDashboard isMonitoring={isMonitoring} />
-      case 'logs': return <SecurityLogs />
+      case 'dashboard': return <Dashboard isMonitoring={isMonitoring} />
       default: return <PagePlaceholder title={getPageTitle()} />
     }
   }

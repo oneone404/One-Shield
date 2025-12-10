@@ -41,6 +41,7 @@ pub mod telemetry;
 pub mod incident;
 pub mod explain;
 pub mod config;
+pub mod analysis_loop;
 
 // Feature extraction
 pub mod features;

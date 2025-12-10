@@ -74,6 +74,9 @@ fn main() {
                 log::info!("Telemetry system initialized");
             }
 
+            // Start Analysis Engine Loop (Bridges Collector -> Incident)
+            logic::analysis_loop::start();
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

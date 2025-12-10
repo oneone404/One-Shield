@@ -3,7 +3,6 @@
 //! Load và chạy ONNX model.
 //! Tách riêng khỏi ai_bridge để dễ swap model.
 
-use std::sync::atomic::{AtomicU64, Ordering};
 use ndarray::Array3;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
@@ -13,79 +12,12 @@ use ort::value::Value;
 use crate::logic::features::FEATURE_COUNT;
 use super::threshold::ThresholdConfig;
 
-// ...
-
 // ============================================================================
 // STATE
 // ============================================================================
 
-/// Latency stats
-static LATENCY_SUM: AtomicU64 = AtomicU64::new(0);
-static INFERENCE_COUNT: AtomicU64 = AtomicU64::new(0);
-
 /// ONNX Session (loaded model)
 static ONNX_SESSION: RwLock<Option<Session>> = RwLock::new(None);
-// ...
-
-// ============================================================================
-// DATA STRUCTURES
-// ============================================================================
-
-/// Engine Status for UI
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EngineStatus {
-    pub model_loaded: bool,
-    pub model_name: String,
-    pub inference_device: String,
-    pub avg_latency_ms: f32,
-    pub inference_count: u64,
-}
-
-// ...
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-pub fn get_status() -> EngineStatus {
-    let metadata = MODEL_METADATA.read();
-    let (loaded, name) = if let Some(meta) = metadata.as_ref() {
-        (true, meta.model_path.clone())
-    } else {
-        (false, "None".to_string())
-    };
-
-    let sum = LATENCY_SUM.load(Ordering::Relaxed);
-    let count = INFERENCE_COUNT.load(Ordering::Relaxed);
-    let avg = if count > 0 { (sum as f32 / count as f32) / 1000.0 } else { 0.0 };
-
-    EngineStatus {
-        model_loaded: loaded,
-        model_name: name,
-        inference_device: "ONNX Runtime (CPU)".to_string(),
-        avg_latency_ms: avg,
-        inference_count: count,
-    }
-}
-
-// ...
-
-/// Auto predict: ONNX if loaded, fallback otherwise
-pub fn predict(sequence: &[[f32; FEATURE_COUNT]]) -> PredictionResult {
-    let result = match predict_onnx(sequence) {
-        Ok(result) => result,
-        Err(e) => {
-            log::debug!("ONNX failed ({}), using fallback", e);
-            predict_fallback(sequence)
-        }
-    };
-
-    // Track metrics
-    LATENCY_SUM.fetch_add(result.inference_time_us, Ordering::Relaxed);
-    INFERENCE_COUNT.fetch_add(1, Ordering::Relaxed);
-
-    result
-}
 
 /// Model metadata
 static MODEL_METADATA: RwLock<Option<ModelMetadata>> = RwLock::new(None);
@@ -438,4 +370,13 @@ pub fn predict_fallback(sequence: &[[f32; FEATURE_COUNT]]) -> PredictionResult {
     }
 }
 
-
+/// Auto predict: ONNX if loaded, fallback otherwise
+pub fn predict(sequence: &[[f32; FEATURE_COUNT]]) -> PredictionResult {
+    match predict_onnx(sequence) {
+        Ok(result) => result,
+        Err(e) => {
+            log::debug!("ONNX failed ({}), using fallback", e);
+            predict_fallback(sequence)
+        }
+    }
+}

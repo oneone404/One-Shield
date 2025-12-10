@@ -30,8 +30,8 @@ use super::features::{
 // CONSTANTS
 // ============================================================================
 
-/// Interval thu thập (10 giây)
-const COLLECT_INTERVAL_SECS: u64 = 10;
+/// Interval thu thập (2 giây cho nhạy cảm cao v1.0)
+const COLLECT_INTERVAL_SECS: u64 = 2;
 
 /// Số Raw Events cần để tạo 1 Summary Vector
 const EVENTS_PER_SUMMARY: usize = 150;

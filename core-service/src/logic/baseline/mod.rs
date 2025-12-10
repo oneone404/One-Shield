@@ -118,15 +118,28 @@ pub fn compare_with_baseline(features: &FeatureVector) -> Vec<AnomalyTag> {
     init();
 
     let global = GLOBAL_BASELINE.read();
-    let baseline = match global.as_ref() {
-        Some(b) => b,
-        None => return vec![],
-    };
 
-    if baseline.samples < 10 {
-        // Not enough samples to judge
-        return vec![];
+    // HEURISTIC FALLBACK (If Baseline Not Ready)
+    // Allows detecting obvious anomalies (like Process Storm) during Learning phase
+    if global.is_none() || global.as_ref().map_or(true, |b| b.samples < 10) {
+        let mut tags = Vec::new();
+        let v = &features.values;
+
+        // Hard-coded Safety Limits
+        if v[0] > 90.0 { tags.push(AnomalyTag::HighCpu); } // CPU > 90%
+        if v[4] > 10_000_000.0 { tags.push(AnomalyTag::NetworkSpike); } // Sent > 10MB/s
+        // Note: feature ranges depend on extractor. Assuming rate is absolute or relative.
+        // Let's assume process churn is normalized or count. If it's count per interval:
+        // 30 notepad in 10s interval = 3.
+        // Correct indices (see features/layout.rs):
+        // 11: new_process_rate
+        // 12: process_churn_rate
+        if v[11] > 2.0 || v[12] > 2.0 { tags.push(AnomalyTag::SuspiciousPattern); }
+
+        return tags;
     }
+
+    let baseline = global.as_ref().unwrap();
 
     let values = features.values;
     let mut tags = Vec::new();
