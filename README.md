@@ -205,7 +205,23 @@ AI Score → ThreatClass → Policy Decision
 
 ## 📝 Changelog
 
-### v0.6.1 (Current)
+### v0.6.2 (Current)
+
+* ✅ **Feature Versioning (P1.1)**: Centralized `layout.rs` & versioned `FeatureVector`
+* ✅ **Safe Baseline (P1.2)**: `logic/baseline` refactored with version check
+* ✅ **Auto-Recovery**: Reset baseline on layout mismatch
+* ✅ **Stability**: 120+ tests passed (Features + Baseline + Telemetry)
+
+### v0.6.1
+
+* ✅ **Security Telemetry** module
+  - SecurityEvent struct (14 event types)
+  - Append-only JSONL recorder
+  - Export: CSV, JSON, training data
+  - Analytics: approval rate, override rate
+* ✅ Telemetry API commands
+* ✅ SecurityLogs UI component
+* ✅ 55 unit tests
 
 * ✅ **Security Telemetry** module
   - SecurityEvent struct (14 event types)

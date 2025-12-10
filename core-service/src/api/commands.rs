@@ -428,7 +428,7 @@ pub async fn get_analysis_history(limit: Option<usize>) -> Result<Vec<serde_json
         "tags": r.tags,
         "severity_level": r.severity_level,
         "confidence": r.confidence,
-        "analyzed_at": r.analyzed_at.to_rfc3339(),
+        "analyzed_at": r.analyzed_at,
     })).collect())
 }
 
