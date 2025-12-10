@@ -24,9 +24,11 @@
                 "minWidth": 1024,
                 "minHeight": 576,
                 "resizable": true,
+                "visible": false,
                 "fullscreen": false,
                 "decorations": false,
                 "transparent": false,
+                "backgroundColor": "#09090b",
                 "center": true
             }
         ],

@@ -1,0 +1,112 @@
+/* ============================================
+   Usage Chart - v0.5.0
+   ============================================ */
+
+.usage-chart-card {
+    background: var(--glass-surface);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md, 12px);
+    padding: 1.25rem;
+    margin-top: 1rem;
+}
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.chart-header h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.chart-time-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--glass-highlight, rgba(255, 255, 255, 0.03));
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--glass-highlight, rgba(255, 255, 255, 0.03));
+    padding: 0.25rem;
+    border-radius: 8px;
+}
+
+.time-btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: none;
+}
+
+.time-btn.active {
+    background: var(--glass-surface);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Legend */
+.chart-legend {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    justify-content: flex-start;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.6rem;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: none;
+}
+
+.legend-item.active {
+    background: var(--glass-surface);
+    color: var(--text-primary);
+    border-color: var(--metric-color);
+}
+
+.legend-item .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--metric-color);
+    opacity: 0.5;
+}
+
+.legend-item.active .legend-dot {
+    opacity: 1;
+}
+
+/* Chart Canvas */
+.chart-container {
+    width: 100%;
+    height: 180px;
+    position: relative;
+}
+
+.usage-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}

@@ -602,7 +602,22 @@ pub fn execute_action(
             created_at: Utc::now(),
             expires_at: Utc::now() + chrono::Duration::minutes(5),
         };
+
+        // Clone for event before moving to storage
+        let pending_clone = pending.clone();
         PENDING_ACTIONS.write().push(pending);
+
+        // Emit event to UI (event-driven)
+        super::events::emit_pending_action(serde_json::json!({
+            "id": pending_clone.id,
+            "action_type": format!("{:?}", pending_clone.action_type),
+            "target_pid": pending_clone.target_pid,
+            "target_name": pending_clone.target_name,
+            "final_score": pending_clone.final_score,
+            "reason": pending_clone.reason,
+            "created_at": pending_clone.created_at.to_rfc3339(),
+            "expires_at": pending_clone.expires_at.to_rfc3339(),
+        }));
 
         return Ok(ActionResult {
             success: true,
@@ -750,11 +765,26 @@ mod tests {
 
     #[test]
     fn test_decide_action_critical() {
+        // CRITICAL takes priority over NETWORK -> IsolateSession
         let action = decide_action(
             0.98,
             &["CRITICAL_ANOMALY".to_string(), "NETWORK_SPIKE".to_string()],
             Some(1234),
             "malware.exe",
+        );
+
+        assert!(action.is_some());
+        assert_eq!(action.unwrap(), ActionType::IsolateSession);
+    }
+
+    #[test]
+    fn test_decide_action_network_only() {
+        // NETWORK only (no CRITICAL) -> BlockNetworkIO
+        let action = decide_action(
+            0.96,
+            &["NETWORK_SPIKE".to_string()],
+            Some(1234),
+            "suspicious.exe",
         );
 
         assert!(action.is_some());

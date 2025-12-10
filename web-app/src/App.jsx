@@ -55,6 +55,17 @@ function App() {
   }, [hasPendingActions, showApprovalModal])
 
   useEffect(() => {
+    // Show window when App mounts and renders
+    const showWindow = async () => {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await api.invoke('show_main_window');
+      } catch (e) {
+        console.error("Failed to show window", e);
+      }
+    };
+    showWindow();
+
     const checkStatus = async () => {
       try {
         const status = await api.getSystemStatus()

@@ -1,129 +1,401 @@
-/* ============================================
-   Dashboard Page Styles
-   ============================================ */
+/* Dashboard Styles - v0.5.0 Redesign */
 
-.dashboard {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg);
-    animation: fadeIn 0.3s ease;
+/* ============================================================================
+   LAYOUT
+   ============================================================================ */
+
+.dashboard-container {
+    padding: 0;
+    padding-bottom: 1rem;
 }
 
-/* Page Header */
-.dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.dashboard-title {
-    font-size: 28px;
-    font-weight: 700;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-/* Stats Grid */
-.stats-grid {
+.dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--spacing-lg);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
 
-@media (max-width: 1400px) {
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+.dashboard-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
 }
 
-@media (max-width: 768px) {
-    .stats-grid {
+@media (max-width: 900px) {
+
+    .dashboard-grid,
+    .dashboard-grid-2 {
         grid-template-columns: 1fr;
     }
 }
 
-/* Activity Section */
-.dashboard-activity {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-lg);
+/* ============================================================================
+   DETAIL CARD - Base
+   ============================================================================ */
+
+.detail-card {
+    background: var(--glass-surface);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md, 12px);
+    padding: 1.25rem;
+    /* NO HOVER EFFECTS */
 }
 
-@media (max-width: 1200px) {
-    .dashboard-activity {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Recent Events */
-.recent-events {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
-}
-
-.recent-events-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-md);
-}
-
-.recent-events-title {
-    font-size: 16px;
-    font-weight: 600;
+.detail-card-header {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
 }
 
-.recent-events-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-}
-
-.event-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-sm) 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.event-item:last-child {
-    border-bottom: none;
-}
-
-.event-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
+.detail-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
-.event-info {
-    flex: 1;
-    min-width: 0;
+.detail-card-icon.cpu {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.05));
+    color: #8b5cf6;
 }
 
-.event-name {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary);
+.detail-card-icon.memory {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.05));
+    color: #6366f1;
 }
 
-.event-time {
-    font-size: 12px;
+.detail-card-icon.processes {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+    color: #10b981;
+}
+
+.detail-card-icon.network {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05));
+    color: #3b82f6;
+}
+
+.detail-card-icon.gpu {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05));
+    color: #f59e0b;
+}
+
+.detail-card-icon.gpu.inactive {
+    background: rgba(255, 255, 255, 0.05);
     color: var(--text-muted);
 }
 
-.event-score {
-    font-size: 14px;
+.detail-card-icon.ai {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(236, 72, 153, 0.05));
+    color: #ec4899;
+}
+
+.detail-card-title {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.detail-card-title .title {
+    font-size: 0.95rem;
     font-weight: 600;
+    color: var(--text-primary);
+}
+
+.detail-card-title .subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.detail-card-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-left: auto;
+}
+
+.detail-card-value.success {
+    color: var(--success);
+}
+
+.detail-card-value.warning {
+    color: var(--warning);
+}
+
+.detail-card-value.danger {
+    color: var(--danger);
+}
+
+.detail-card-value.neutral {
+    color: var(--text-primary);
+}
+
+.detail-card-value.primary {
+    color: var(--primary);
+}
+
+/* ============================================================================
+   PROGRESS BAR
+   ============================================================================ */
+
+.detail-card-bar {
+    height: 8px;
+    background: var(--glass-highlight, rgba(255, 255, 255, 0.05));
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.detail-card-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.detail-card-fill.success {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.detail-card-fill.warning {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.detail-card-fill.danger {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+/* ============================================================================
+   STATS ROW
+   ============================================================================ */
+
+.detail-card-stats {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.detail-card-stats.network-stats {
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.stat-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-value.success {
+    color: var(--success);
+}
+
+.stat-value.warning {
+    color: var(--warning);
+}
+
+.stat-value.danger {
+    color: var(--danger);
+}
+
+.stat-value.primary {
+    color: var(--primary);
+}
+
+/* ============================================================================
+   GPU CARD SPECIFIC
+   ============================================================================ */
+
+.gpu-card .detail-card-title .subtitle {
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gpu-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.gpu-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.bar-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    width: 36px;
+    flex-shrink: 0;
+}
+
+.bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--glass-highlight, rgba(255, 255, 255, 0.05));
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.bar-fill.usage {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.bar-fill.memory {
+    background: linear-gradient(90deg, #6366f1, #818cf8);
+}
+
+.bar-value {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 55px;
+    text-align: right;
+}
+
+/* ============================================================================
+   AI CARD SPECIFIC
+   ============================================================================ */
+
+.ai-info-grid {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.ai-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.info-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.info-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ai-buffer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ai-buffer-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.ai-buffer-label svg {
+    opacity: 0.7;
+}
+
+.buffer-badge {
+    margin-left: auto;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.buffer-badge.ready {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+.buffer-badge.filling {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+}
+
+.ai-buffer-track {
+    height: 8px;
+    background: var(--glass-highlight, rgba(255, 255, 255, 0.05));
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.ai-buffer-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), #a78bfa);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.ai-buffer-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* ============================================================================
+   BADGES
+   ============================================================================ */
+
+.badge-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    padding: 0.2rem 0.6rem;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+    padding: 0.2rem 0.6rem;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-subtle {
+    background: var(--glass-highlight, rgba(255, 255, 255, 0.05));
+    color: var(--text-muted);
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 500;
 }

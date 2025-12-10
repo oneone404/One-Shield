@@ -1,7 +1,8 @@
 /**
  * useActionGuard Hook - Action Guard State Management
  *
- * Quản lý pending actions với polling và notification.
+ * Event-driven với fallback polling.
+ * Listen events từ Rust backend, giảm CPU usage.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -13,13 +14,12 @@ import {
     getActionHistory,
 } from '../services/tauriApi';
 
-// Check if running in Tauri for notifications
+// Check if running in Tauri
 const isTauri = () => typeof window !== 'undefined' && window.__TAURI_INTERNALS__;
 
 // Notification helper
 async function showNotification(title, body) {
     if (!isTauri()) {
-        // Use browser notification
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification(title, { body, icon: '/favicon.ico' });
         }
@@ -53,7 +53,7 @@ function playAlertSound() {
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
 
-        oscillator.frequency.value = 880; // A5 note
+        oscillator.frequency.value = 880;
         oscillator.type = 'sine';
         gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
@@ -67,10 +67,10 @@ function playAlertSound() {
 
 export function useActionGuard(options = {}) {
     const {
-        pollingInterval = 1000,      // Poll every 1 second
-        autoNotify = true,           // Show notifications
-        autoSound = true,            // Play sound on new action
-        enabled = true,              // Enable/disable hook
+        pollingInterval = 5000,      // Fallback polling every 5s (reduced from 1s)
+        autoNotify = true,
+        autoSound = true,
+        enabled = true,
     } = options;
 
     const [pendingActions, setPendingActions] = useState([]);
@@ -79,10 +79,32 @@ export function useActionGuard(options = {}) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Track previously seen action IDs to detect new ones
     const previousActionsRef = useRef(new Set());
 
-    // Fetch pending actions
+    // Handle new action from event
+    const handleNewAction = useCallback((action) => {
+        if (autoSound) {
+            playAlertSound();
+        }
+
+        if (autoNotify) {
+            showNotification(
+                '⚠️ Yêu Cầu Phê Duyệt',
+                `${action.action_type}: ${action.target_name} (Score: ${(action.final_score * 100).toFixed(0)}%)`
+            );
+        }
+
+        // Add to pending actions
+        setPendingActions(prev => {
+            const exists = prev.some(a => a.id === action.id);
+            if (exists) return prev;
+            return [...prev, action];
+        });
+
+        previousActionsRef.current.add(action.id);
+    }, [autoNotify, autoSound]);
+
+    // Fetch pending actions (for initial load and fallback)
     const fetchPendingActions = useCallback(async () => {
         if (!enabled) return;
 
@@ -90,27 +112,13 @@ export function useActionGuard(options = {}) {
             const actions = await getPendingActions();
             const actionsList = Array.isArray(actions) ? actions : [];
 
-            // Check for new actions
             const currentIds = new Set(actionsList.map(a => a.id));
             const previousIds = previousActionsRef.current;
 
-            // Find new actions
-            const newActions = actionsList.filter(a => !previousIds.has(a.id));
-
-            if (newActions.length > 0 && previousIds.size > 0) {
-                // New actions detected!
-                if (autoSound) {
-                    playAlertSound();
-                }
-
-                if (autoNotify) {
-                    newActions.forEach(action => {
-                        showNotification(
-                            '⚠️ Yêu Cầu Phê Duyệt',
-                            `${action.action_type}: ${action.target_name} (Score: ${(action.final_score * 100).toFixed(0)}%)`
-                        );
-                    });
-                }
+            // Only notify for truly new actions (not on initial load)
+            if (previousIds.size > 0) {
+                const newActions = actionsList.filter(a => !previousIds.has(a.id));
+                newActions.forEach(handleNewAction);
             }
 
             previousActionsRef.current = currentIds;
@@ -120,12 +128,11 @@ export function useActionGuard(options = {}) {
             console.error('Failed to fetch pending actions:', err);
             setError(err.message);
         }
-    }, [enabled, autoNotify, autoSound]);
+    }, [enabled, handleNewAction]);
 
     // Fetch status
     const fetchStatus = useCallback(async () => {
         if (!enabled) return;
-
         try {
             const statusData = await getActionGuardStatus();
             setStatus(statusData);
@@ -137,7 +144,6 @@ export function useActionGuard(options = {}) {
     // Fetch history
     const fetchHistory = useCallback(async (limit = 50) => {
         if (!enabled) return;
-
         try {
             const historyData = await getActionHistory(limit);
             setHistory(Array.isArray(historyData) ? historyData : []);
@@ -152,10 +158,10 @@ export function useActionGuard(options = {}) {
         try {
             const result = await approveAction(actionId);
 
-            // Refresh pending actions
-            await fetchPendingActions();
+            // Remove from local state immediately
+            setPendingActions(prev => prev.filter(a => a.id !== actionId));
+            previousActionsRef.current.delete(actionId);
 
-            // Show notification
             if (autoNotify && result?.success) {
                 showNotification(
                     '✅ Hành Động Đã Thực Thi',
@@ -171,7 +177,7 @@ export function useActionGuard(options = {}) {
         } finally {
             setLoading(false);
         }
-    }, [fetchPendingActions, autoNotify]);
+    }, [autoNotify]);
 
     // Cancel action
     const cancel = useCallback(async (actionId) => {
@@ -179,8 +185,9 @@ export function useActionGuard(options = {}) {
         try {
             await cancelAction(actionId);
 
-            // Refresh pending actions
-            await fetchPendingActions();
+            // Remove from local state immediately
+            setPendingActions(prev => prev.filter(a => a.id !== actionId));
+            previousActionsRef.current.delete(actionId);
 
             return true;
         } catch (err) {
@@ -190,23 +197,50 @@ export function useActionGuard(options = {}) {
         } finally {
             setLoading(false);
         }
-    }, [fetchPendingActions]);
+    }, []);
 
-    // Set up polling
+    // Event listener setup
     useEffect(() => {
         if (!enabled) return;
+
+        let unlisten = null;
+
+        const setupEventListener = async () => {
+            if (!isTauri()) return;
+
+            try {
+                const { listen } = await import('@tauri-apps/api/event');
+
+                // Listen for pending action events
+                unlisten = await listen('action-guard:pending', (event) => {
+                    console.log('Received pending action event:', event.payload);
+                    handleNewAction(event.payload);
+                });
+
+                console.log('Event listener setup complete');
+            } catch (err) {
+                console.warn('Failed to setup event listener, using polling fallback:', err);
+            }
+        };
+
+        setupEventListener();
 
         // Initial fetch
         fetchPendingActions();
         fetchStatus();
 
-        // Set up interval
+        // Fallback polling (reduced interval since we have events)
         const interval = setInterval(() => {
             fetchPendingActions();
         }, pollingInterval);
 
-        return () => clearInterval(interval);
-    }, [enabled, pollingInterval, fetchPendingActions, fetchStatus]);
+        return () => {
+            clearInterval(interval);
+            if (unlisten) {
+                unlisten();
+            }
+        };
+    }, [enabled, pollingInterval, fetchPendingActions, fetchStatus, handleNewAction]);
 
     // Request notification permission on mount
     useEffect(() => {

@@ -2,6 +2,10 @@
 //!
 //! Thu thập thông tin hệ thống CHI TIẾT cho từng process.
 //! Sử dụng sysinfo crate để đọc CPU, RAM, Network, Disk I/O per-process.
+//!
+//! ## Architecture (v0.5.0)
+//! - Uses `features/` module for feature extraction
+//! - Uses `model/` module for AI inference
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
@@ -10,6 +14,17 @@ use parking_lot::RwLock;
 use sysinfo::{System, Networks};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+// Import feature extractors
+use super::features::{
+    cpu::CpuFeatures,
+    memory::MemoryFeatures,
+    network::NetworkFeatures,
+    disk::DiskFeatures,
+    process::ProcessFeatures,
+    vector::FeatureExtractor,
+    FeatureVector,
+};
 
 // ============================================================================
 // CONSTANTS
@@ -158,6 +173,7 @@ impl SummaryVector {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemMetrics {
     pub cpu_usage: f32,
+    pub cpu_name: String,  // 🆕 CPU brand name
     pub memory_used_mb: f64,
     pub memory_total_mb: f64,
     pub memory_percent: f32,
@@ -402,25 +418,33 @@ fn collect_process_events() -> Result<(), CollectorError> {
 }
 
 /// Tạo Summary Vector với 15 Enhanced Features
+///
+/// 🆕 Now uses modular feature extractors (v0.5.0)
 fn check_and_create_summary() {
     let mut buffer = PROCESS_EVENTS_BUFFER.write();
 
     if buffer.len() >= EVENTS_PER_SUMMARY {
         let events: Vec<ProcessEvent> = buffer.drain(0..EVENTS_PER_SUMMARY).collect();
-        let summary = create_enhanced_summary_vector(&events);
+
+        // 🆕 Use new modular extractor system
+        let summary = create_summary_with_extractors(&events);
 
         let mut queue = SUMMARY_QUEUE.write();
         queue.push(summary.clone());
 
         TOTAL_SUMMARIES.fetch_add(1, Ordering::SeqCst);
 
-        log::info!("Created Enhanced Summary Vector: {} (15 features, {} events, {} spikes)",
+        log::info!("Created Summary Vector (v0.5.0): {} (15 features, {} events, {} spikes)",
             summary.id, events.len(), summary.spike_events);
     }
 }
 
-/// Tạo Enhanced Summary Vector với Feature Crosses
-fn create_enhanced_summary_vector(events: &[ProcessEvent]) -> SummaryVector {
+/// 🆕 Create Summary Vector using modular Feature Extractors
+///
+/// This is the new architecture (v0.5.0) that uses separate feature modules
+/// for better maintainability and extensibility.
+#[allow(dead_code)]
+fn create_summary_with_extractors(events: &[ProcessEvent]) -> SummaryVector {
     if events.is_empty() {
         return SummaryVector {
             id: uuid::Uuid::new_v4().to_string(),
@@ -439,109 +463,51 @@ fn create_enhanced_summary_vector(events: &[ProcessEvent]) -> SummaryVector {
         };
     }
 
-    // Basic stats
-    let mut total_cpu = 0.0f64;
-    let mut max_cpu = 0.0f32;
-    let mut total_memory = 0.0f64;
-    let mut max_memory = 0.0f64;
-    let mut total_net_sent = 0u64;
-    let mut total_net_recv = 0u64;
-    let mut total_disk_read = 0u64;
-    let mut total_disk_write = 0u64;
-    let mut total_disk_io_rate = 0.0f64;
+    // Initialize feature extractors
+    let mut cpu_features = CpuFeatures::new();
+    let mut memory_features = MemoryFeatures::new();
+    let mut network_features = NetworkFeatures::new();
+    let mut disk_features = DiskFeatures::new();
+    let mut process_features = ProcessFeatures::new();
 
-    // Spike counts
-    let mut cpu_spike_count = 0u32;
-    let mut memory_spike_count = 0u32;
-    let mut new_process_count = 0u32;
-
-    // Process tracking
-    let mut unique_pids = std::collections::HashSet::new();
+    // Process tracking for top processes
     let mut process_cpu: HashMap<String, f32> = HashMap::new();
     let mut process_memory: HashMap<String, f64> = HashMap::new();
 
-    // First pass: collect stats
+    // Extract features from each event
     for event in events {
-        total_cpu += event.cpu_percent as f64;
-        if event.cpu_percent > max_cpu {
-            max_cpu = event.cpu_percent;
-        }
+        // CPU
+        cpu_features.add_sample(event.cpu_percent);
 
-        total_memory += event.memory_mb;
-        if event.memory_mb > max_memory {
-            max_memory = event.memory_mb;
-        }
+        // Memory
+        memory_features.add_sample(event.memory_mb);
 
-        total_net_sent = total_net_sent.max(event.network_sent_bytes);
-        total_net_recv = total_net_recv.max(event.network_recv_bytes);
-        total_disk_read += event.disk_read_bytes;
-        total_disk_write += event.disk_write_bytes;
-        total_disk_io_rate += event.disk_read_rate + event.disk_write_rate;
+        // Network (max values)
+        network_features.update(event.network_sent_bytes, event.network_recv_bytes);
 
-        if event.is_cpu_spike {
-            cpu_spike_count += 1;
-        }
-        if event.is_memory_spike {
-            memory_spike_count += 1;
-        }
-        if event.is_new_process {
-            new_process_count += 1;
-        }
+        // Disk
+        disk_features.add_sample(
+            event.disk_read_bytes,
+            event.disk_write_bytes,
+            event.disk_read_rate,
+            event.disk_write_rate,
+        );
 
-        unique_pids.insert(event.pid);
+        // Process
+        process_features.add_process(event.pid, event.is_new_process);
 
-        // Track per-process usage
+        // Track per-process usage for top lists
         *process_cpu.entry(event.name.clone()).or_insert(0.0) += event.cpu_percent;
         *process_memory.entry(event.name.clone()).or_insert(0.0) += event.memory_mb;
     }
 
-    let n = events.len() as f64;
-    let n_u32 = events.len() as u32;
-
-    // Calculate features
-    let avg_cpu = (total_cpu / n) as f32;
-    let avg_memory = (total_memory / n) as f32;
-
-    let network_ratio = if total_net_sent + total_net_recv > 0 {
-        total_net_sent as f32 / (total_net_sent + total_net_recv) as f32
-    } else {
-        0.5
-    };
-
-    // Feature Crosses (NEW)
-    let cpu_spike_rate = cpu_spike_count as f32 / n as f32;
-    let memory_spike_rate = memory_spike_count as f32 / n as f32;
-    let new_process_rate = new_process_count as f32 / n as f32;
-    let avg_disk_io_rate = (total_disk_io_rate / n) as f32;
-
-    // Process churn rate (unique processes / total events)
-    let process_churn_rate = unique_pids.len() as f32 / n as f32;
-
-    // Normalize large values (log scale)
-    let norm_net_sent = ((total_net_sent as f64) + 1.0).ln() as f32;
-    let norm_net_recv = ((total_net_recv as f64) + 1.0).ln() as f32;
-    let norm_disk_read = ((total_disk_read as f64) + 1.0).ln() as f32;
-    let norm_disk_write = ((total_disk_write as f64) + 1.0).ln() as f32;
-    let norm_disk_io_rate = (avg_disk_io_rate + 1.0).ln();
-
-    // 15 Features array
-    let features = [
-        avg_cpu,                           // 0. avg_cpu
-        max_cpu,                           // 1. max_cpu
-        avg_memory,                        // 2. avg_memory
-        max_memory as f32,                 // 3. max_memory
-        norm_net_sent,                     // 4. total_network_sent (log)
-        norm_net_recv,                     // 5. total_network_recv (log)
-        norm_disk_read,                    // 6. total_disk_read (log)
-        norm_disk_write,                   // 7. total_disk_write (log)
-        unique_pids.len() as f32,          // 8. unique_processes
-        network_ratio,                     // 9. network_ratio
-        cpu_spike_rate,                    // 10. cpu_spike_rate (NEW)
-        memory_spike_rate,                 // 11. memory_spike_rate (NEW)
-        new_process_rate,                  // 12. new_process_rate (NEW)
-        norm_disk_io_rate,                 // 13. avg_disk_io_rate (NEW)
-        process_churn_rate,                // 14. process_churn_rate (NEW)
-    ];
+    // Build FeatureVector using extractors
+    let mut feature_vector = FeatureVector::new();
+    cpu_features.extract(&mut feature_vector);
+    memory_features.extract(&mut feature_vector);
+    network_features.extract(&mut feature_vector);
+    disk_features.extract(&mut feature_vector);
+    process_features.extract(&mut feature_vector);
 
     // Top processes
     let mut top_cpu: Vec<_> = process_cpu.into_iter().collect();
@@ -552,20 +518,22 @@ fn create_enhanced_summary_vector(events: &[ProcessEvent]) -> SummaryVector {
     top_mem.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     let top_memory_processes: Vec<(String, f64)> = top_mem.into_iter().take(5).collect();
 
+    let spike_events = cpu_features.spike_count + memory_features.spike_count;
+
     SummaryVector {
         id: uuid::Uuid::new_v4().to_string(),
-        features,
+        features: *feature_vector.as_array(),
         created_at: Utc::now(),
-        raw_events_count: n_u32,
+        raw_events_count: events.len() as u32,
         processed: false,
         ml_score: None,
         tag_score: None,
         final_score: None,
         tags: vec![],
-        unique_pids: unique_pids.into_iter().collect(),
+        unique_pids: process_features.get_unique_pids(),
         top_cpu_processes,
         top_memory_processes,
-        spike_events: cpu_spike_count + memory_spike_count,
+        spike_events,
     }
 }
 
@@ -579,7 +547,7 @@ pub fn get_system_metrics() -> SystemMetrics {
     let mut sys_guard = SYSTEM.write();
     let sys = sys_guard.as_mut();
 
-    let (cpu_usage, memory_used, memory_total, process_count) = if let Some(s) = sys {
+    let (cpu_usage, cpu_name, memory_used, memory_total, process_count) = if let Some(s) = sys {
         s.refresh_all();
 
         let cpus = s.cpus();
@@ -589,13 +557,20 @@ pub fn get_system_metrics() -> SystemMetrics {
             0.0
         };
 
+        // Get CPU brand name
+        let name = if !cpus.is_empty() {
+            cpus[0].brand().to_string()
+        } else {
+            "Unknown CPU".to_string()
+        };
+
         let mem_used = s.used_memory() as f64 / 1024.0 / 1024.0;
         let mem_total = s.total_memory() as f64 / 1024.0 / 1024.0;
         let procs = s.processes().len();
 
-        (cpu, mem_used, mem_total, procs)
+        (cpu, name, mem_used, mem_total, procs)
     } else {
-        (0.0, 0.0, 0.0, 0)
+        (0.0, "Unknown CPU".to_string(), 0.0, 0.0, 0)
     };
 
     let mut net_guard = NETWORKS.write();
@@ -620,6 +595,7 @@ pub fn get_system_metrics() -> SystemMetrics {
 
     SystemMetrics {
         cpu_usage,
+        cpu_name,
         memory_used_mb: memory_used,
         memory_total_mb: memory_total,
         memory_percent: if memory_total > 0.0 { (memory_used / memory_total * 100.0) as f32 } else { 0.0 },

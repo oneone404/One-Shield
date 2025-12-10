@@ -14,6 +14,7 @@ use crate::logic::{collector, baseline, guard, action_guard, ai_bridge};
 pub struct SystemStatus {
     pub is_monitoring: bool,
     pub cpu_usage: f32,
+    pub cpu_name: String,  // 🆕 CPU brand name
     pub memory_usage: f32,
     pub memory_used_mb: f64,
     pub memory_total_mb: f64,
@@ -130,6 +131,7 @@ pub async fn get_system_status() -> Result<SystemStatus, String> {
     Ok(SystemStatus {
         is_monitoring,
         cpu_usage: metrics.cpu_usage,
+        cpu_name: metrics.cpu_name,
         memory_usage: metrics.memory_percent,
         memory_used_mb: metrics.memory_used_mb,
         memory_total_mb: metrics.memory_total_mb,
@@ -773,11 +775,96 @@ pub async fn clear_prediction_buffer() -> Result<bool, String> {
 #[tauri::command]
 pub async fn get_buffer_status() -> Result<serde_json::Value, String> {
     let has_data = ai_bridge::has_enough_data();
+    let buffer_status = ai_bridge::get_buffer_status();
     let metadata = ai_bridge::get_metadata();
 
     Ok(serde_json::json!({
         "has_enough_data": has_data,
         "model_loaded": ai_bridge::is_model_loaded(),
-        "sequence_length": metadata.map(|m| m.sequence_length).unwrap_or(5),
+        "sequence_length": metadata.as_ref().map(|m| m.sequence_length).unwrap_or(5),
+        "current_size": buffer_status.current_size,
+        "required_size": buffer_status.required_size,
+        "fill_percent": buffer_status.fill_percent,
+        "is_ready": buffer_status.is_ready,
     }))
 }
+
+// ============================================================================
+// GPU COMMANDS (v0.5.0)
+// ============================================================================
+
+/// Get GPU static info (name, driver, CUDA version)
+#[tauri::command]
+pub async fn get_gpu_info() -> Result<serde_json::Value, String> {
+    use crate::logic::features::GpuInfo;
+
+    match GpuInfo::fetch() {
+        Some(info) => Ok(serde_json::json!({
+            "available": true,
+            "name": info.name,
+            "driver_version": info.driver_version,
+            "cuda_version": info.cuda_version,
+            "memory_total_mb": info.memory_total_mb,
+        })),
+        None => Ok(serde_json::json!({
+            "available": false,
+            "name": "No GPU detected",
+            "driver_version": "",
+            "cuda_version": "",
+            "memory_total_mb": 0,
+        })),
+    }
+}
+
+/// Get GPU live metrics (usage, memory, temperature, fan)
+#[tauri::command]
+pub async fn get_gpu_metrics() -> Result<serde_json::Value, String> {
+    use crate::logic::features::GpuFeatures;
+
+    let gpu = GpuFeatures::fetch();
+
+    Ok(serde_json::json!({
+        "available": gpu.gpu_available,
+        "gpu_usage": gpu.gpu_usage,
+        "memory_usage": gpu.memory_usage,
+        "memory_used_mb": gpu.memory_used_mb,
+        "memory_total_mb": gpu.memory_total_mb,
+        "temperature": gpu.temperature,
+        "power_draw": gpu.power_draw,
+        "fan_speed": gpu.fan_speed,
+    }))
+}
+
+// ============================================================================
+// AI STATUS COMMANDS (v0.5.0)
+// ============================================================================
+
+/// Get comprehensive AI system status
+#[tauri::command]
+pub async fn get_ai_status() -> Result<serde_json::Value, String> {
+    let buffer_status = ai_bridge::get_buffer_status();
+    let metadata = ai_bridge::get_metadata();
+    let is_loaded = ai_bridge::is_model_loaded();
+
+    Ok(serde_json::json!({
+        "model": {
+            "loaded": is_loaded,
+            "type": metadata.as_ref().map(|m| m.model_type.clone()).unwrap_or_default(),
+            "path": metadata.as_ref().map(|m| m.model_path.clone()).unwrap_or_default(),
+            "sequence_length": metadata.as_ref().map(|m| m.sequence_length).unwrap_or(5),
+            "features": metadata.as_ref().map(|m| m.features).unwrap_or(15),
+            "threshold": metadata.as_ref().map(|m| m.threshold).unwrap_or(0.7),
+        },
+        "buffer": {
+            "current_size": buffer_status.current_size,
+            "required_size": buffer_status.required_size,
+            "fill_percent": buffer_status.fill_percent,
+            "is_ready": buffer_status.is_ready,
+        },
+        "inference": {
+            "method": if is_loaded { "onnx" } else { "fallback" },
+            "ready": buffer_status.is_ready,
+        }
+    }))
+}
+

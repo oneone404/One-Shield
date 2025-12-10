@@ -10,7 +10,7 @@ const isTauri = () => {
 }
 
 // Dynamic import Tauri API
-let invoke = async (cmd, args = {}) => {
+export let invoke = async (cmd, args = {}) => {
     if (isTauri()) {
         const { invoke: tauriInvoke } = await import('@tauri-apps/api/core');
         return tauriInvoke(cmd, args);
@@ -28,6 +28,7 @@ function getMockResponse(cmd, args) {
         get_system_status: {
             is_monitoring: Math.random() > 0.5,
             cpu_usage: 20 + Math.random() * 40,
+            cpu_name: 'AMD Ryzen 9 5900X 12-Core Processor',
             memory_usage: 40 + Math.random() * 30,
             memory_used_mb: 4000 + Math.random() * 4000,
             memory_total_mb: 16384,
@@ -66,6 +67,45 @@ function getMockResponse(cmd, args) {
             anomalies_detected: Math.floor(Math.random() * 5),
             is_monitoring: true,
             uptime_seconds: Math.floor(Math.random() * 3600),
+        },
+        // GPU (v0.5.0)
+        get_gpu_info: {
+            available: true,
+            name: 'NVIDIA GeForce RTX 3080',
+            driver_version: '546.33',
+            cuda_version: '12.3',
+            memory_total_mb: 10240,
+        },
+        get_gpu_metrics: {
+            available: true,
+            gpu_usage: 15 + Math.random() * 40,
+            memory_usage: 20 + Math.random() * 30,
+            memory_used_mb: 2048 + Math.random() * 3000,
+            memory_total_mb: 10240,
+            temperature: 45 + Math.random() * 25,
+            power_draw: 80 + Math.random() * 150,
+            fan_speed: 30 + Math.random() * 40,
+        },
+        // AI Status (v0.5.0)
+        get_ai_status: {
+            model: {
+                loaded: true,
+                type: 'lstm',
+                path: 'models/model.onnx',
+                sequence_length: 5,
+                features: 15,
+                threshold: 0.7,
+            },
+            buffer: {
+                current_size: Math.floor(Math.random() * 10),
+                required_size: 5,
+                fill_percent: Math.random() * 100,
+                is_ready: Math.random() > 0.3,
+            },
+            inference: {
+                method: 'onnx',
+                ready: true,
+            }
         },
     };
 
@@ -301,6 +341,26 @@ export async function getBufferStatus() {
 }
 
 // ============================================================================
+// GPU API (v0.5.0)
+// ============================================================================
+
+export async function getGpuInfo() {
+    return invoke('get_gpu_info');
+}
+
+export async function getGpuMetrics() {
+    return invoke('get_gpu_metrics');
+}
+
+// ============================================================================
+// AI STATUS API (v0.5.0)
+// ============================================================================
+
+export async function getAiStatus() {
+    return invoke('get_ai_status');
+}
+
+// ============================================================================
 // UTILITY
 // ============================================================================
 
@@ -364,6 +424,11 @@ export default {
     pushAndPredict,
     clearPredictionBuffer,
     getBufferStatus,
+    // GPU (v0.5.0)
+    getGpuInfo,
+    getGpuMetrics,
+    // AI Status (v0.5.0)
+    getAiStatus,
     // Utility
     formatBytes,
     formatDuration,

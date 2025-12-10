@@ -33,6 +33,12 @@ async fn window_close(window: tauri::Window) {
 async fn window_start_drag(window: tauri::Window) {
     let _ = window.start_dragging();
 }
+
+#[tauri::command]
+async fn show_main_window(window: tauri::Window) {
+    let _ = window.show();
+    let _ = window.set_focus();
+}
 // -----------------------------------------------------
 
 fn main() {
@@ -42,7 +48,7 @@ fn main() {
             .init();
     }
 
-    log::info!("Starting AI Security App v0.4.0 (Phase IV - ONNX Native)...");
+    log::info!("Starting AI Security App v0.5.0 (Phase V - Modular Architecture)...");
 
     logic::baseline::init();
 
@@ -56,12 +62,19 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .setup(|app| {
+            // Initialize event system with AppHandle
+            logic::events::init(app.handle().clone());
+            log::info!("Event system initialized");
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             // Window Controls (Manual)
             window_minimize,
             window_toggle_maximize,
             window_close,
             window_start_drag,
+            show_main_window,
 
             // System Commands
             commands::get_system_status,
@@ -122,6 +135,13 @@ fn main() {
             commands::push_and_predict,
             commands::clear_prediction_buffer,
             commands::get_buffer_status,
+
+            // GPU Commands (v0.5.0)
+            commands::get_gpu_info,
+            commands::get_gpu_metrics,
+
+            // AI Status Commands (v0.5.0)
+            commands::get_ai_status,
 
             // Training Data Commands
             commands::export_training_data,
