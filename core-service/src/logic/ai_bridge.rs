@@ -106,6 +106,11 @@ pub fn load_metadata(metadata_path: &str) -> Result<(), super::model::inference:
 /// Async prediction
 pub async fn predict_async(sequence: Vec<[f32; FEATURE_COUNT]>) -> Result<PredictionResult, super::model::inference::InferenceError> {
     use super::model::inference::InferenceError;
+    use crate::logic::config::SafetyConfig;
+
+    if !SafetyConfig::is_ai_enabled() {
+        return Err(InferenceError("AI Engine Disabled by Safety Config".to_string()));
+    }
 
     tokio::task::spawn_blocking(move || {
         predict_onnx(&sequence)

@@ -667,13 +667,25 @@ pub fn decide_with_pipeline(input: &PipelineInput) -> PipelineOutput {
     // Step 6: Map policy action to our ActionType
     let action = map_policy_action(&policy_result, &classification);
 
+    // FREEZE CORE: Safety Config Check
+    let (final_action, auto_exec) = if !crate::logic::config::SafetyConfig::is_auto_block_enabled() {
+        if action.is_some() && action != Some(ActionType::AlertOnly) {
+            log::info!("Auto-Block disabled: Downgrading action to AlertOnly");
+            (Some(ActionType::AlertOnly), false)
+        } else {
+            (action, false)
+        }
+    } else {
+        (action, policy_result.auto_execute)
+    };
+
     // Step 7: Build output
     PipelineOutput {
         threat_class: format!("{:?}", classification.threat_class),
         decision: format!("{:?}", policy_result.decision),
         severity: format!("{:?}", policy_result.severity),
-        action,
-        auto_execute: policy_result.auto_execute,
+        action: final_action,
+        auto_execute: auto_exec,
         confidence: classification.confidence,
         reasons: [
             classification.reasons.clone(),

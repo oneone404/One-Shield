@@ -314,10 +314,7 @@ fn collect_process_events() -> Result<(), CollectorError> {
 
     // Initialize history if needed
     let mut history_guard = PROCESS_HISTORY.write();
-    if history_guard.is_none() {
-        *history_guard = Some(HashMap::new());
-    }
-    let history = history_guard.as_mut().unwrap();
+    let history = history_guard.get_or_insert(HashMap::new());
 
     let process_count = sys.processes().len();
     let net_per_process = if process_count > 0 {

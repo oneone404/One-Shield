@@ -36,7 +36,15 @@ impl DatasetWriter {
     /// Append record to dataset log
     /// Handles file rotation automatically
     pub fn append(&self, record: &DatasetRecord) -> io::Result<()> {
-        let mut file_guard = self.file.lock().unwrap();
+        let mut file_guard = match self.file.lock() {
+            Ok(g) => g,
+            Err(p) => {
+                log::error!("DatasetWriter mutex poisoned, recovering");
+                p.into_inner()
+            }
+        };
+
+        let json = serde_json::to_string(record)?;
 
         // If file not open, try to find latest or create new
         if file_guard.is_none() {

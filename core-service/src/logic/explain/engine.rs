@@ -23,7 +23,14 @@ static FEATURE_WEIGHTS: [f32; 15] = [
     1.2, // spike_correlation
 ];
 
+use crate::logic::config::SafetyConfig;
+
 pub fn explain(record: &DatasetRecord) -> Option<ExplainResult> {
+    // Safety guard: Check Config first
+    if !SafetyConfig::is_explain_enabled() {
+        return None;
+    }
+
     // Safety guard: only explain suspicious/malicious
     if record.threat == ThreatClass::Benign || record.confidence < 0.4 {
         return None;

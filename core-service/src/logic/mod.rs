@@ -40,6 +40,7 @@ pub mod policy;
 pub mod telemetry;
 pub mod incident;
 pub mod explain;
+pub mod config;
 
 // Feature extraction
 pub mod features;
