@@ -51,9 +51,11 @@ pub fn start() {
                     user_label: None,
                 };
 
-                // 6. Send to Incident Manager
-                // process_event expects (record, tags)
+                // 6. Send to Incident Manager & Dataset Logger
                 incident::process_event(&record, &analysis.tags);
+
+                // LOGGING TO DISK (Crucial for Training)
+                crate::logic::dataset::log(record.clone());
 
                 // 7. Mark summary as processed in Collector
                 collector::mark_summary_processed(
