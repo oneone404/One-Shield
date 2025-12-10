@@ -1,14 +1,14 @@
-# AI Security - Anomaly Detection System
+# AI Security – Anomaly Detection System
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.5.1-blue.svg)
+![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-orange.svg)
 ![React](https://img.shields.io/badge/React-18-61dafb.svg)
 ![Rust](https://img.shields.io/badge/Rust-1.70+-brown.svg)
 
-**Ứng dụng giám sát hệ thống và phát hiện bất thường sử dụng AI/ML**
+**Ứng dụng desktop giám sát hệ thống & phát hiện bất thường theo kiến trúc EDR, tăng cường bằng AI/ML**
 
 </div>
 
@@ -16,18 +16,19 @@
 
 ## 📖 Tổng Quan
 
-**AI Security** là một ứng dụng desktop được xây dựng trên nền tảng **Tauri 2.0**, kết hợp sức mạnh của **Rust** (backend) và **React** (frontend). Ứng dụng giám sát hoạt động hệ thống theo thời gian thực, phân tích hành vi và phát hiện các hoạt động bất thường sử dụng mô hình AI (ONNX Runtime).
+**AI Security** là một ứng dụng desktop xây dựng trên **Tauri 2.0**, kết hợp **Rust (backend)** và **React (frontend)**. Ứng dụng giám sát hệ thống theo thời gian thực, trích xuất đặc trưng hành vi, so sánh baseline và **phát hiện bất thường theo pipeline EDR chuẩn**. AI (ONNX Runtime) đóng vai trò **chấm điểm & gợi ý**, trong khi quyết định cuối cùng được kiểm soát bởi **Threat Classification → Policy Engine → Action Guard**.
 
 ### ✨ Tính Năng Chính
 
-- 🖥️ **Giám sát hệ thống real-time**: CPU, RAM, GPU, Disk, Network, Processes
-- 🤖 **AI-powered Anomaly Detection**: ONNX model với 15 features
-- 🛡️ **Action Guard**: Hệ thống phê duyệt hành động nguy hiểm
-- 📊 **Dashboard trực quan**: Glassmorphism design với performance chart
-- 🌓 **Dark/Light Theme**: Hỗ trợ chế độ sáng/tối
-- 🔔 **Event-driven Notifications**: Real-time alerts (~10ms latency)
-- 📈 **Baseline Learning**: Tự động học hành vi bình thường
-- 🎮 **GPU Monitoring**: NVIDIA GPU metrics (temp, power, VRAM, fan)
+* 🖥️ **Giám sát hệ thống real-time**: CPU, RAM, GPU, Disk, Network, Processes
+* 🤖 **AI-powered Anomaly Detection**: ONNX model với 15 features
+* 🛡️ **Action Guard**: Phê duyệt/auto-block hành động nguy hiểm
+* 📊 **Dashboard trực quan**: Glassmorphism + performance charts
+* 🌓 **Dark / Light Theme**
+* 🔔 **Event-driven Notifications**: latency ~10ms
+* 📈 **Baseline Learning**: Tự học hành vi bình thường
+* 🎮 **GPU Monitoring**: NVIDIA GPU (temp, power, VRAM, fan)
+* 🔒 **Confidence Guard**: Giảm false positives bằng kiểm tra độ tin cậy
 
 ---
 
@@ -35,7 +36,7 @@
 
 ```
 PS/
-├── assets/                         # Tài nguyên tĩnh
+├── assets/
 │   ├── core-service/               # ONNX Runtime files
 │   ├── data/                       # Models & training data
 │   └── scripts/                    # Python AI scripts
@@ -44,17 +45,33 @@ PS/
 │   ├── src/
 │   │   ├── main.rs                 # Entry point
 │   │   ├── api/
-│   │   │   ├── mod.rs              # API module
-│   │   │   ├── commands.rs         # Tauri commands (~870 lines)
+│   │   │   ├── mod.rs
+│   │   │   ├── commands.rs         # Tauri commands (~870 LOC)
 │   │   │   └── v1/                 # API versioning
-│   │   │       └── mod.rs          # v1 re-exports
+│   │   │       └── mod.rs
+│   │   │
 │   │   └── logic/
 │   │       ├── collector.rs        # Process data collector
 │   │       ├── baseline.rs         # Baseline learning engine
-│   │       ├── guard.rs            # Model protection
+│   │       ├── guard.rs            # Model integrity & protection
 │   │       ├── ai_bridge.rs        # ONNX inference bridge
-│   │       ├── action_guard.rs     # Action approval system
-│   │       ├── events.rs           # Event emitter (NEW)
+│   │       ├── action_guard.rs     # Action approval/execution
+│   │       ├── events.rs           # Event emitter
+│   │       │
+│   │       ├── threat/             # Threat Classification (v0.6)
+│   │       │   ├── mod.rs
+│   │       │   ├── types.rs        # ThreatClass, AnomalyScore, BaselineDiff
+│   │       │   ├── context.rs      # ThreatContext (builder pattern)
+│   │       │   ├── rules.rs        # Thresholds & constants
+│   │       │   └── classifier.rs   # classify() + Confidence Guard
+│   │       │
+│   │       ├── policy/             # Policy Decision (v0.6)
+│   │       │   ├── mod.rs
+│   │       │   ├── types.rs        # Decision, Severity, ActionType
+│   │       │   ├── config.rs       # PolicyConfig (strict / aggressive)
+│   │       │   ├── engine.rs       # decide() logic
+│   │       │   └── rules.rs        # Extensible rules (CryptoMining, Ransomware)
+│   │       │
 │   │       ├── features/           # Feature extraction
 │   │       │   ├── cpu.rs
 │   │       │   ├── memory.rs
@@ -63,42 +80,54 @@ PS/
 │   │       │   ├── process.rs
 │   │       │   ├── gpu.rs
 │   │       │   └── vector.rs
+│   │       │
 │   │       └── model/              # AI/ML modules
-│   │           ├── inference.rs    # ONNX prediction
-│   │           ├── buffer.rs       # Sequence buffer
-│   │           └── threshold.rs    # Dynamic thresholds
+│   │           ├── inference.rs
+│   │           ├── buffer.rs
+│   │           └── threshold.rs
+│   │
 │   ├── capabilities/               # Tauri permissions
 │   └── Cargo.toml
 │
 └── web-app/                        # Frontend React
     ├── src/
-    │   ├── main.jsx                # Entry point
-    │   ├── App.jsx                 # Root component
-    │   ├── components/             # UI Components
-    │   │   ├── index.js            # Exports
-    │   │   ├── Header.jsx
-    │   │   ├── Sidebar.jsx
-    │   │   ├── TitleBar.jsx
-    │   │   ├── ApprovalModal.jsx
-    │   │   ├── CpuCard.jsx
-    │   │   ├── MemoryCard.jsx
-    │   │   ├── ProcessesCard.jsx
-    │   │   ├── NetworkCard.jsx
-    │   │   ├── GpuCard.jsx
-    │   │   ├── AiStatusCard.jsx
-    │   │   └── UsageChart.jsx
+    │   ├── main.jsx
+    │   ├── App.jsx
+    │   ├── components/
     │   ├── pages/
-    │   │   └── Dashboard.jsx
     │   ├── hooks/
-    │   │   └── useActionGuard.js   # Event-driven hook
     │   ├── services/
-    │   │   └── tauriApi.js         # API client
     │   └── styles/
-    │       ├── index.css           # Variables & base
-    │       ├── components/         # Component styles
-    │       └── pages/              # Page styles
     └── package.json
 ```
+
+---
+
+## 🎯 EDR-style Pipeline (v0.6)
+
+```
+[ Collect ] → [ Feature ] → [ Baseline ] → [ AI Score ]
+                                         │
+                                         ▼
+                               [ Threat Classification ]
+                               Benign / Suspicious / Malicious
+                                         │
+                                         ▼
+                               [ Policy Decision Engine ]
+                               SilentLog / Notify /
+                               RequireApproval / AutoBlock
+                                         │
+                                         ▼
+                               [ Action Guard ] → UI / Execute
+```
+
+### Separation of Concerns
+
+| Module         | Responsibility                                |
+| -------------- | --------------------------------------------- |
+| `threat/`      | Chuyển **AI score + context** → `ThreatClass` |
+| `policy/`      | Chuyển `ThreatClass` → `Decision`             |
+| `action_guard` | Thực thi hành động an toàn                    |
 
 ---
 
@@ -106,9 +135,9 @@ PS/
 
 ### Prerequisites
 
-- **Rust** 1.70+
-- **Node.js** 18+
-- **pnpm** (recommended) or npm
+* Rust **1.70+**
+* Node.js **18+**
+* pnpm (recommended) hoặc npm
 
 ### Installation
 
@@ -117,7 +146,7 @@ PS/
 git clone <repo-url>
 cd PS
 
-# Install frontend dependencies
+# Frontend
 cd web-app
 pnpm install
 
@@ -134,25 +163,8 @@ cargo tauri build
 
 ---
 
-## 🔧 Technical Stack
+## 📊 Feature Vector (15)
 
-### Backend (Rust)
-- **Tauri 2.0** - Desktop framework
-- **ONNX Runtime** - AI inference
-- **sysinfo** - System metrics
-- **parking_lot** - Fast synchronization
-
-### Frontend (React)
-- **React 18** - UI framework
-- **Vite** - Build tool
-- **Lucide Icons** - Icon library
-- **CSS Variables** - Theming
-
----
-
-## 📊 Features Detail
-
-### 15-Feature Vector
 ```
 [cpu_percent, memory_percent, network_sent_rate, network_recv_rate,
  cpu_spike_rate, memory_spike_rate, disk_read_rate, disk_write_rate,
@@ -160,61 +172,56 @@ cargo tauri build
  new_process_rate, combined_io, process_churn_rate]
 ```
 
-### Event-driven Architecture (v0.5.1)
-- **Rust emits events** khi có pending action mới
-- **Frontend listens** qua `@tauri-apps/api/event`
-- **Fallback polling** 5s (reduced from 1s)
-- **CPU savings** ~80%
+---
 
-### GPU Monitoring
-- NVIDIA GPU via `nvidia-smi`
-- Metrics: Usage, VRAM, Temperature, Power, Fan Speed
-- Auto-fallback when GPU unavailable
+## 🔒 Confidence Guard (v0.6)
+
+Giảm **false positives** bằng cách yêu cầu **điều kiện kép**:
+
+* **Malicious** chỉ khi: `score ≥ 0.8` **AND** `confidence ≥ 0.7`
+* Score cao nhưng confidence thấp → **downgrade** xuống `Suspicious`
+
+```rust
+if score >= 0.8 && confidence >= 0.7 {
+    ThreatClass::Malicious
+} else if score >= 0.8 {
+    ThreatClass::Suspicious
+}
+```
 
 ---
 
 ## 🛡️ Action Guard Flow
 
 ```
-AI Detect Anomaly (score > 0.95)
-        ↓
-Create Pending Action
-        ↓
-Emit Event → UI receives instantly
-        ↓
-User Approve/Deny
-        ↓
-Execute Action (Kill/Suspend/Block)
+AI Score → ThreatClass → Policy Decision
+        → Pending Action → Event Emit
+        → UI Approval → Execute / Cancel
 ```
 
 ---
 
 ## 📝 Changelog
 
-### v0.5.1 (Current)
-- ✅ Event-driven notifications
-- ✅ Modular component architecture
-- ✅ Cleaned up CSS structure
-- ✅ API versioning ready
-- ✅ Usage chart with 60s history
-- ✅ GPU fan speed monitoring
+### v0.6.0 (Current)
 
-### v0.5.0
-- ✅ GPU monitoring (NVIDIA)
-- ✅ AI Status card
-- ✅ Modular features architecture
-- ✅ Performance optimizations
+* ✅ Modular `threat/` & `policy/`
+* ✅ Confidence Guard
+* ✅ Extensible security rules
+* ✅ 43 unit tests – behavior preserved
+* ✅ Clean EDR-style separation
 
-### v0.4.0
-- ✅ ONNX native inference
-- ✅ Action Guard system
-- ✅ 15-feature vector
+### v0.5.x
+
+* Event-driven notifications
+* GPU monitoring (NVIDIA)
+* Usage charts & performance tuning
 
 ---
 
 ## 📄 License
 
-MIT License - See [LICENSE](LICENSE) for details.
+MIT License
 
 ---
 

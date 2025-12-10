@@ -1,7 +1,10 @@
 //! Action Guard - Module Hành động Phòng thủ Chủ động
 //!
-//! Can thiệp khi Final Score vượt ngưỡng ACTION_THRESHOLD.
+//! Can thiệp khi Final Score vượt ngưỡng hoặc theo quyết định từ Policy Engine.
 //! Hỗ trợ: Kill Process, Block Network I/O, Isolate Session.
+//!
+//! ## Pipeline (v0.6)
+//! AI Score → threat::classify() → policy::decide() → Action Guard
 
 use std::process::Command;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -9,6 +12,10 @@ use std::collections::HashMap;
 use parking_lot::RwLock;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+// EDR Pipeline imports (v0.6)
+use super::threat::{self, AnomalyScore, BaselineDiff, ThreatContext, ThreatClass, ClassificationResult};
+use super::policy::{self, Decision, PolicyResult, PolicyConfig};
 
 // ============================================================================
 // CONSTANTS
@@ -560,6 +567,157 @@ pub fn decide_action(
     }
 
     None
+}
+
+// ============================================================================
+// EDR-STYLE PIPELINE (v0.6)
+// ============================================================================
+
+/// Input cho EDR pipeline
+#[derive(Debug, Clone)]
+pub struct PipelineInput {
+    pub anomaly_score: f32,
+    pub confidence: f32,
+    pub method: String,
+    pub baseline_deviation: f32,
+    pub is_spike: bool,
+    pub target_pid: u32,
+    pub target_name: String,
+    pub is_new_process: bool,
+    pub child_count: u32,
+    pub network_bytes: u64,
+    pub tags: Vec<String>,
+}
+
+/// Output từ EDR pipeline
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PipelineOutput {
+    pub threat_class: String,
+    pub decision: String,
+    pub severity: String,
+    pub action: Option<ActionType>,
+    pub auto_execute: bool,
+    pub confidence: f32,
+    pub reasons: Vec<String>,
+}
+
+/// Quyết định hành động sử dụng EDR pipeline
+///
+/// Flow: AI Score → Threat Classification → Policy Decision → Action
+pub fn decide_with_pipeline(input: &PipelineInput) -> PipelineOutput {
+    // Step 1: Validate whitelist
+    if is_whitelisted(&input.target_name) {
+        return PipelineOutput {
+            threat_class: "Benign".to_string(),
+            decision: "SilentLog".to_string(),
+            severity: "Low".to_string(),
+            action: None,
+            auto_execute: false,
+            confidence: 1.0,
+            reasons: vec!["Process is whitelisted".to_string()],
+        };
+    }
+
+    // Step 2: Check cooldown
+    if is_in_cooldown(input.target_pid) {
+        return PipelineOutput {
+            threat_class: "Benign".to_string(),
+            decision: "SilentLog".to_string(),
+            severity: "Low".to_string(),
+            action: None,
+            auto_execute: false,
+            confidence: 1.0,
+            reasons: vec!["Process in cooldown".to_string()],
+        };
+    }
+
+    // Step 3: Build inputs for threat classification
+    let anomaly = AnomalyScore {
+        score: input.anomaly_score,
+        confidence: input.confidence,
+        method: input.method.clone(),
+    };
+
+    let baseline = BaselineDiff {
+        deviation_score: input.baseline_deviation,
+        is_spike: input.is_spike,
+        ..Default::default()
+    };
+
+    let context = ThreatContext {
+        is_new_process: input.is_new_process,
+        is_whitelisted: false, // Already checked above
+        child_process_count: input.child_count,
+        network_bytes_sent: input.network_bytes,
+        tags: input.tags.clone(),
+        process_name: Some(input.target_name.clone()),
+        pid: Some(input.target_pid),
+        ..Default::default()
+    };
+
+    // Step 4: Classify threat
+    let classification = threat::classify(&anomaly, &baseline, &context);
+
+    // Step 5: Get policy decision
+    let policy_result = policy::decide(&classification);
+
+    // Step 6: Map policy action to our ActionType
+    let action = map_policy_action(&policy_result, &classification);
+
+    // Step 7: Build output
+    PipelineOutput {
+        threat_class: format!("{:?}", classification.threat_class),
+        decision: format!("{:?}", policy_result.decision),
+        severity: format!("{:?}", policy_result.severity),
+        action,
+        auto_execute: policy_result.auto_execute,
+        confidence: classification.confidence,
+        reasons: [
+            classification.reasons.clone(),
+            policy_result.reasons.clone(),
+        ].concat(),
+    }
+}
+
+/// Map policy ActionType to our ActionType
+fn map_policy_action(policy: &PolicyResult, classification: &ClassificationResult) -> Option<ActionType> {
+    use policy::ActionType as PolicyAction;
+
+    match policy.decision {
+        Decision::SilentLog => None,
+        Decision::Notify => Some(ActionType::AlertOnly),
+        Decision::RequireApproval | Decision::AutoBlock => {
+            // Map based on policy action type
+            match policy.action {
+                PolicyAction::None => None,
+                PolicyAction::AlertOnly => Some(ActionType::AlertOnly),
+                PolicyAction::SuspendProcess => Some(ActionType::SuspendProcess),
+                PolicyAction::KillProcess => Some(ActionType::KillProcess),
+                PolicyAction::BlockNetwork => Some(ActionType::BlockNetworkIO),
+                PolicyAction::IsolateSession => Some(ActionType::IsolateSession),
+            }
+        }
+    }
+}
+
+/// Execute action based on pipeline output
+pub fn execute_from_pipeline(
+    input: &PipelineInput,
+    output: &PipelineOutput,
+) -> Result<ActionResult, ActionError> {
+    let action = match &output.action {
+        Some(a) => *a,
+        None => return Err(ActionError("No action required".to_string())),
+    };
+
+    execute_action(
+        action,
+        Some(input.target_pid),
+        &input.target_name,
+        input.anomaly_score,
+        input.tags.clone(),
+        output.auto_execute,
+    )
 }
 
 /// Thực thi hành động (với hoặc không approval)
