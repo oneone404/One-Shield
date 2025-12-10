@@ -55,6 +55,22 @@ export default function AiEngineStatus() {
             </div>
 
             <div className="es-grid">
+                {/* AI Model */}
+                <div className={`es-section ${status.model.loaded ? 'status-green' : 'status-yellow'}`}>
+                    <div className="es-label"><Cpu size={14} /> AI MODEL</div>
+                    <div className="es-row">
+                        <span>Engine:</span> <span className="value bold">{status.model.engine}</span>
+                    </div>
+                    <div className="es-row">
+                        <span>Version:</span> <span className="value bold">{status.model.model_version || "Native"}</span>
+                    </div>
+                    <div className="es-row">
+                        <span>Trained on:</span> <span className="value">{status.model.trained_on_records ? status.model.trained_on_records.toLocaleString() : "Pre-trained"}</span>
+                    </div>
+                    <div className="es-row">
+                        <span>Status:</span> <span className="value">{status.model.loaded ? "Active" : "Fallback"}</span>
+                    </div>
+                </div>
                 {/* Baseline */}
                 <div className={`es-section ${getModeColor(status.baseline.mode)}`}>
                     <div className="es-label"><Activity size={14} /> BASELINE</div>

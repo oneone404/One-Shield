@@ -103,6 +103,28 @@ def export_onnx(model, output_path, feature_count):
 
     print(f"✅ Model saved successfully at {output_path}")
 
+def save_metadata(output_path, feature_count, records):
+    # Sidecar JSON: model.onnx -> model.meta
+    meta_path = os.path.splitext(output_path)[0] + ".meta"
+
+    # Simple versioning based on timestamp if not provided
+    version = f"v{pd.Timestamp.now().strftime('%Y.%m.%d')}"
+
+    data = {
+        "version": version,
+        "records": int(records),
+        "features": feature_count,
+        "created_at": int(pd.Timestamp.now().timestamp()),
+        "engine": "onnx-randomforest"
+    }
+
+    try:
+        with open(meta_path, "w") as f:
+            json.dump(data, f, indent=2)
+        print(f"✅ Metadata saved to {meta_path}")
+    except Exception as e:
+        print(f"Warning: Failed to save metadata: {e}")
+
 def main():
     parser = argparse.ArgumentParser(description="Train AI Security Model (RandomForest -> ONNX)")
     parser.add_argument("--input", required=True, help="Path to input dataset (.jsonl)")
@@ -124,6 +146,9 @@ def main():
 
     # 3. Export ONNX
     export_onnx(model, args.out, args.features)
+
+    # 4. Save Metadata
+    save_metadata(args.out, args.features, len(df))
 
 if __name__ == "__main__":
     main()

@@ -34,4 +34,5 @@ pub struct ModelStatus {
     pub engine: String, // "onnx" | "heuristic"
     pub model_version: Option<String>,
     pub loaded: bool,
+    pub trained_on_records: Option<u64>,
 }

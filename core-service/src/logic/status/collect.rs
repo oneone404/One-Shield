@@ -22,10 +22,13 @@ pub fn collect() -> EngineStatus {
 
     let d_status = dataset::get_status();
 
+    let (model_version, trained_on_records) = get_model_meta();
+
     let m_status = ModelStatus {
         engine: if ai_bridge::is_model_loaded() { "ONNX".to_string() } else { "Heuristic Fallback".to_string() },
-        model_version: None, // TODO: Extract from metadata if available
+        model_version,
         loaded: ai_bridge::is_model_loaded(),
+        trained_on_records,
     };
 
     EngineStatus {
@@ -36,4 +39,21 @@ pub fn collect() -> EngineStatus {
         dataset: d_status,
         model: m_status,
     }
+}
+
+fn get_model_meta() -> (Option<String>, Option<u64>) {
+    // Try to find metadata sidecar in standard location
+    let meta_path = dirs::data_local_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("ai-security")
+        .join("core.meta");
+
+    if let Ok(content) = std::fs::read_to_string(meta_path) {
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+            let v = json.get("version").and_then(|s| s.as_str()).map(|s| s.to_string());
+            let r = json.get("records").and_then(|n| n.as_u64());
+            return (v, r);
+        }
+    }
+    (None, None)
 }
