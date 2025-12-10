@@ -283,8 +283,18 @@ pub async fn get_engine_status() -> Result<crate::api::engine_status::EngineStat
 /// Export full dataset to a single JSONL file for training (P2.2)
 #[tauri::command]
 pub async fn export_dataset(path: String) -> Result<String, String> {
-    match crate::logic::dataset::export::to_jsonl(&path) {
-        Ok(count) => Ok(format!("Successfully exported {} files.", count)),
+    let target_path = if path.is_empty() {
+        dirs::download_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("ai-security-training-data.jsonl")
+            .to_string_lossy()
+            .to_string()
+    } else {
+        path
+    };
+
+    match crate::logic::dataset::export::to_jsonl(&target_path) {
+        Ok(count) => Ok(format!("Successfully exported {} files to {}", count, target_path)),
         Err(e) => Err(format!("Export failed: {}", e)),
     }
 }

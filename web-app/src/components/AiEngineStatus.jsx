@@ -71,17 +71,41 @@ export default function AiEngineStatus() {
                     )}
                 </div>
 
-                {/* Dataset */}
-                <div className="es-section status-blue">
-                    <div className="es-label"><Database size={14} /> DATASET</div>
-                    <div className="es-row">
-                        <span>Records:</span> <span className="value">{status.dataset.total_records.toLocaleString()}</span>
-                    </div>
-                    <div className="es-row">
-                        <span>Current File:</span> <span className="value" style={{ fontSize: '0.7rem' }}>{status.dataset.current_file}</span>
-                    </div>
-                    <div className="es-row">
-                        <span>Size:</span> <span className="value">{status.dataset.total_size_mb.toFixed(2)} MB</span>
+                {/* Dataset Inspector (P2.2.2) */}
+                <div className="dataset-inspector es-section">
+                    <div className="es-label"><Database size={14} /> DATASET INSPECTOR</div>
+                    <div className="ds-stats">
+                        <div className="stat-big">
+                            <span className="label">Total Records</span>
+                            <span className="value">{status.dataset.total_records.toLocaleString()}</span>
+                        </div>
+                        <div className="ds-distribution">
+                            <div className="dist-row benign">
+                                <span style={{ width: '70px' }}>Benign</span>
+                                <div className="bar"><div style={{ width: `${((status.dataset.benign_count / (status.dataset.total_records || 1)) * 100).toFixed(0)}%` }}></div></div>
+                                <span className="pct">{((status.dataset.benign_count / (status.dataset.total_records || 1)) * 100).toFixed(0)}%</span>
+                            </div>
+                            <div className="dist-row suspicious">
+                                <span style={{ width: '70px' }}>Suspicious</span>
+                                <div className="bar"><div style={{ width: `${((status.dataset.suspicious_count / (status.dataset.total_records || 1)) * 100).toFixed(0)}%` }}></div></div>
+                                <span className="pct">{((status.dataset.suspicious_count / (status.dataset.total_records || 1)) * 100).toFixed(0)}%</span>
+                            </div>
+                            <div className="dist-row malicious">
+                                <span style={{ width: '70px' }}>Malicious</span>
+                                <div className="bar"><div style={{ width: `${((status.dataset.malicious_count / (status.dataset.total_records || 1)) * 100).toFixed(0)}%` }}></div></div>
+                                <span className="pct">{((status.dataset.malicious_count / (status.dataset.total_records || 1)) * 100).toFixed(0)}%</span>
+                            </div>
+                        </div>
+                        <button className="btn-export" onClick={async () => {
+                            try {
+                                const msg = await invoke('export_dataset', { path: "" });
+                                alert(msg);
+                            } catch (e) {
+                                alert("Export failed: " + e);
+                            }
+                        }}>
+                            Export Dataset
+                        </button>
                     </div>
                 </div>
             </div>

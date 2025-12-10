@@ -24,6 +24,9 @@ pub struct DatasetStatus {
     pub total_files: usize,
     pub total_size_mb: f32,
     pub total_records: u64,
+    pub benign_count: u64,
+    pub suspicious_count: u64,
+    pub malicious_count: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
