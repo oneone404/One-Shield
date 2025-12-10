@@ -76,13 +76,16 @@ pub fn explain(record: &DatasetRecord) -> Option<ExplainResult> {
 
 fn get_description(name: &str) -> Option<String> {
     match name {
-        "network_sent_rate" => Some("High outbound traffic variance".to_string()),
-        "network_recv_rate" => Some("Unusual download activity".to_string()),
-        "disk_write_rate" => Some("Abnormal disk write pattern".to_string()),
-        "process_churn_rate" => Some("Rapid process creation/termination".to_string()),
-        "new_process_rate" => Some("Sudden appearance of new processes".to_string()),
-        "cpu_spike_rate" => Some("Erratical CPU usage spikes".to_string()),
-        "memory_spike_rate" => Some("Sudden memory consumption change".to_string()),
-        _ => None
+        "network_sent_rate" => Some("Potential Data Exfiltration (High Outbound Traffic)".to_string()),
+        "network_recv_rate" => Some("Suspicious Inbound Volume (Possible C2 Communication)".to_string()),
+        "disk_write_rate" => Some("High Intensity Disk Write (Ransomware-like behavior)".to_string()),
+        "disk_read_rate" => Some("Abnormal Data Collection Activity".to_string()),
+        "process_churn_rate" => Some("Rapid Process Forking/Termination (Evasion Technique)".to_string()),
+        "new_process_rate" => Some("Sudden Spike in New Process Creation".to_string()),
+        "cpu_spike_rate" => Some("Anomalous CPU Usage Patterns (Possible Crypto-mining)".to_string()),
+        "memory_spike_rate" => Some("Memory Usage Deviation (Potential Injection)".to_string()),
+        "combined_io" => Some("Aggregate System I/O Stress".to_string()),
+        "unique_processes" => Some("Deviation in Active Process Count".to_string()),
+        _ => Some("Statistical Deviation from Baseline".to_string())
     }
 }
