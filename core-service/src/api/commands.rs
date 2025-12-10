@@ -280,6 +280,15 @@ pub async fn get_engine_status() -> Result<crate::api::engine_status::EngineStat
     Ok(crate::logic::status::collect::collect())
 }
 
+/// Export full dataset to a single JSONL file for training (P2.2)
+#[tauri::command]
+pub async fn export_dataset(path: String) -> Result<String, String> {
+    match crate::logic::dataset::export::to_jsonl(&path) {
+        Ok(count) => Ok(format!("Successfully exported {} files.", count)),
+        Err(e) => Err(format!("Export failed: {}", e)),
+    }
+}
+
 // ============================================================================
 // BASELINE COMMANDS
 // ============================================================================

@@ -5,6 +5,7 @@
 
 pub mod record;
 pub mod writer;
+pub mod export;
 
 #[cfg(test)]
 mod tests;
@@ -12,6 +13,15 @@ mod tests;
 use parking_lot::Mutex;
 use writer::DatasetWriter;
 pub use record::DatasetRecord;
+use std::path::PathBuf;
+
+/// Get the base directory for dataset storage
+pub fn get_dataset_dir() -> PathBuf {
+    dirs::data_local_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("ai-security")
+        .join("dataset")
+}
 
 // Global singleton writer
 static WRITER: Mutex<Option<DatasetWriter>> = Mutex::new(None);
