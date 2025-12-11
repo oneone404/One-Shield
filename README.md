@@ -1,11 +1,12 @@
 # 🛡️ One-Shield - AI-Powered Endpoint Detection & Response (EDR)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.1.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/Version-2.2.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Windows-lightgrey" alt="Platform">
   <img src="https://img.shields.io/badge/AI-ONNX%20Runtime-green" alt="AI">
   <img src="https://img.shields.io/badge/UI-React%20%2B%20Tauri-purple" alt="UI">
   <img src="https://img.shields.io/badge/Enterprise-Ready-orange" alt="Enterprise">
+  <img src="https://img.shields.io/badge/Tests-131%20Passed-brightgreen" alt="Tests">
 </p>
 
 **One-Shield** là một giải pháp bảo mật Endpoint thông minh, kết hợp Machine Learning với Behavioral Analysis để phát hiện và phản ứng với các mối đe dọa trong thời gian thực.
@@ -121,6 +122,15 @@
 | **Policy Sync** | Remote policy distribution | ✅ Hoàn thành |
 | **Executive Reports** | Security score, threat overview | ✅ Hoàn thành |
 | **REST API** | 20+ endpoints với auth | ✅ Hoàn thành |
+
+### 🔬 Advanced Detection v2.2 (NEW!)
+| Tính năng | Mô tả | Trạng thái |
+|-----------|-------|------------|
+| **AMSI Script Scanning** | 70+ malicious patterns (Mimikatz, Empire, etc.) | ✅ Hoàn thành |
+| **DLL Injection Detection** | 60+ patterns, MITRE ATT&CK mapping | ✅ Hoàn thành |
+| **Memory Shellcode Scanning** | 18 patterns (MSF, Cobalt Strike, etc.) | ✅ Hoàn thành |
+| **Suspicious Spawn Detection** | Office→CMD, Browser→Script patterns | ✅ Hoàn thành |
+| **Encoded Command Detection** | Base64, -EncodedCommand detection | ✅ Hoàn thành |
 
 ---
 
@@ -544,16 +554,16 @@ Expected: Dashboard hiện Incident với tags `PROCESSSPIKE`, `HIGHCHURNRATE`.
 
 ---
 
-### 📅 Phase 8: Advanced Detection (v2.2)
+### 📅 Phase 8: Advanced Detection (v2.2) ✅ COMPLETE
 > *Mục tiêu: Nâng cao khả năng phát hiện*
 
-| Tính năng | Mô tả | Effort |
+| Tính năng | Mô tả | Status |
 |-----------|-------|--------|
-| **DLL Injection Detection** | Monitor CreateRemoteThread, etc. | 🔴 High |
-| **Keylogger API Hooking** | Detect GetAsyncKeyState abuse | 🔴 High |
-| **Memory Scanning** | Scan for shellcode patterns | 🔴 High |
-| **AMSI Integration** | Use Windows AMSI for scripts | 🟡 Medium |
-| **ETW Tracing** | Event Tracing for Windows | 🔴 High |
+| **AMSI Script Scanning** | Heuristic patterns for malicious scripts | ✅ Done |
+| **DLL Injection Detection** | Detect RemoteThread, APC, Hollowing | ✅ Done |
+| **Memory Scanning** | Scan for shellcode patterns (MSF, CS) | ✅ Done |
+| **Keylogger API Hooking** | Detect GetAsyncKeyState abuse | � v2.3 |
+| **ETW Tracing** | Event Tracing for Windows | � v2.3 |
 
 ---
 
