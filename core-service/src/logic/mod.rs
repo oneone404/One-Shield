@@ -80,3 +80,8 @@ pub mod response;
 
 // Enterprise Features (Phase 6)
 pub mod enterprise;
+
+// Advanced Detection (Phase 8)
+pub mod advanced_detection;
+
+
