@@ -134,6 +134,7 @@
 | **ThreatAlertPanel UI** | Real-time alerts với MITRE IDs & severity | ✅ Hoàn thành |
 | **13 Backend API Commands** | scan_script, get_injection_alerts, etc. | ✅ Hoàn thành |
 | **Event-driven Updates** | 4 new event types cho real-time alerts | ✅ Hoàn thành |
+| **Analysis Loop Integration** | Auto-check injection patterns mỗi 10s | ✅ Hoàn thành |
 
 ---
 
@@ -141,7 +142,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        ONE-SHIELD v2.0                          │
+│                        ONE-SHIELD v2.2                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐ │
