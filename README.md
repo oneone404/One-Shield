@@ -1,50 +1,418 @@
-# One-Shield: AI-Powered Endpoint Security (EDR)
+# 🛡️ One-Shield - AI-Powered Endpoint Detection & Response (EDR)
 
-> **Next-Gen Security Agent built with Rust & AI.**
-> *Detects what traditional AVs miss through Behavioral Analysis.*
+<p align="center">
+  <img src="https://img.shields.io/badge/Version-1.0.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/Platform-Windows-lightgrey" alt="Platform">
+  <img src="https://img.shields.io/badge/AI-ONNX%20Runtime-green" alt="AI">
+  <img src="https://img.shields.io/badge/UI-React%20%2B%20Tauri-purple" alt="UI">
+</p>
 
-## 📖 The Story
-Traditional antiviruses rely on signatures. If a malware changes one byte, it bypasses detection.
-**One-Shield** is different. It doesn't care about signatures. It cares about **Behavior**.
+**One-Shield** là một giải pháp bảo mật Endpoint thông minh, kết hợp Machine Learning với Behavioral Analysis để phát hiện và phản ứng với các mối đe dọa trong thời gian thực.
 
-- Is a process consuming 100% CPU suddenly? (Crypto-mining?)
-- Is it uploading massive data to an unknown IP? (Exfiltration?)
-- Is it encrypting disk files rapidly? (Ransomware?)
+> 🎯 **Mục tiêu**: Xây dựng EDR Agent từ số 0, có khả năng tự học hành vi hệ thống và phát hiện bất thường mà không cần signature database.
 
-By baselining normal system behavior and using AI to detect deviations, One-Shield identifies threats in real-time.
+---
 
-## 🌟 Key Features (v1.0)
-- **🔍 AI Anomaly Detection**: Hybrid Statistical + ML engine.
-- **🛡️ Explainability**: "Why was this flagged?" - detailed feature contribution analysis.
-- **⏱️ Incident Timeline**: Correlates fragmented events into contextual security incidents.
-- **🧠 Self-Learning**: Collects data, trains offline, updates model online.
-- **🚀 Performance**: Built with Rust for <1% CPU overhead.
+## � Mục Lục
 
-## 🛠️ Architecture
-- **Core**: Rust (Tauri Backend)
-- **Frontend**: React + Tailwind (Glassmorphism)
-- **AI Engine**: ONNX Runtime (Random Forest)
-- **Trainer**: Python (Scikit-learn)
+- [Tính Năng v1.0](#-tính-năng-v10)
+- [Kiến Trúc Hệ Thống](#-kiến-trúc-hệ-thống)
+- [Cấu Trúc Thư Mục](#-cấu-trúc-thư-mục)
+- [Chi Tiết Từng Module](#-chi-tiết-từng-module)
+- [Cài Đặt & Chạy](#-cài-đặt--chạy)
+- [Test & Demo](#-test--demo)
+- [Roadmap v1.1](#-roadmap-v11)
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
-- Node.js & NPM
-- Rust (Cargo)
-- Python 3.9+ (for training)
+## ✅ Tính Năng v1.0
 
-### Installation
-1. Data Collection:
+### 🔍 Detection Engine (Phát hiện)
+| Tính năng | Mô tả | Trạng thái |
+|-----------|-------|------------|
+| **Real-time Monitoring** | Thu thập 15 chỉ số hệ thống mỗi 2 giây | ✅ Hoàn thành |
+| **Baseline Learning** | Tự học "thói quen bình thường" của máy tính | ✅ Hoàn thành |
+| **Anomaly Detection** | Phát hiện hành vi lệch so với baseline | ✅ Hoàn thành |
+| **Heuristic Rules** | Luật cứng phát hiện tấn công (Process Storm, Network Spike) | ✅ Hoàn thành |
+| **AI Inference (ONNX)** | Sử dụng model ONNX pre-trained để chấm điểm | ✅ Hoàn thành |
+| **Fallback Mode** | Tự động chuyển sang Heuristic nếu AI lỗi | ✅ Hoàn thành |
+
+### 📊 Dashboard & UI
+| Tính năng | Mô tả | Trạng thái |
+|-----------|-------|------------|
+| **Glassmorphism UI** | Giao diện hiện đại, premium với hiệu ứng kính mờ | ✅ Hoàn thành |
+| **AI Engine Status** | Hiển thị trạng thái Model, Baseline, Dataset | ✅ Hoàn thành |
+| **Security Incidents Panel** | Danh sách các sự cố bảo mật real-time | ✅ Hoàn thành |
+| **Incident Timeline** | Chi tiết timeline của từng sự cố | ✅ Hoàn thành |
+| **Explainability (Why Detected?)** | Giải thích tại sao hệ thống phát hiện anomaly | ✅ Hoàn thành |
+| **System Stats Cards** | CPU, RAM, Network, GPU metrics | ✅ Hoàn thành |
+| **Performance Chart** | Biểu đồ 60s realtime | ✅ Hoàn thành |
+
+### 🛡️ Safety & Resilience
+| Tính năng | Mô tả | Trạng thái |
+|-----------|-------|------------|
+| **Kill-Switch AI** | Có thể tắt AI inference khi cần | ✅ Hoàn thành |
+| **Kill-Switch Auto-Block** | Vô hiệu hóa tự động chặn | ✅ Hoàn thành |
+| **Model Failover** | Không crash khi model bị hỏng/thiếu | ✅ Hoàn thành |
+| **Panic-Free Code** | Xử lý graceful mọi lỗi runtime | ✅ Hoàn thành |
+| **Baseline Persistence** | Lưu baseline ra đĩa, không mất khi restart | ✅ Hoàn thành |
+
+### 📦 Data & Training
+| Tính năng | Mô tả | Trạng thái |
+|-----------|-------|------------|
+| **Dataset Logging** | Ghi mọi sample vào file .jsonl | ✅ Hoàn thành |
+| **Feature Versioning** | Quản lý version của feature layout | ✅ Hoàn thành |
+| **Export Dataset** | Xuất dataset để train offline | ✅ Hoàn thành |
+| **Anti-Poisoning (Basic)** | Không học mẫu có score > 0.5 | ✅ Hoàn thành |
+
+---
+
+## 🏗️ Kiến Trúc Hệ Thống
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        ONE-SHIELD v1.0                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐ │
+│  │  COLLECTOR  │───▶│  ANALYSIS   │───▶│  INCIDENT MANAGER   │ │
+│  │  (2s loop)  │    │    LOOP     │    │  (Alert & Explain)  │ │
+│  └─────────────┘    └──────┬──────┘    └─────────────────────┘ │
+│         │                  │                      │             │
+│         ▼                  ▼                      ▼             │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐ │
+│  │   SYSINFO   │    │  BASELINE   │    │     DASHBOARD       │ │
+│  │  (metrics)  │    │  + AI/ONNX  │    │  (React + Tauri)    │ │
+│  └─────────────┘    └─────────────┘    └─────────────────────┘ │
+│                            │                                    │
+│                            ▼                                    │
+│                     ┌─────────────┐                             │
+│                     │   DATASET   │                             │
+│                     │  (.jsonl)   │                             │
+│                     └─────────────┘                             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Data Flow (Luồng dữ liệu)
+1. **Collector** thu thập metrics hệ thống mỗi 2 giây
+2. **Analysis Loop** xử lý dữ liệu qua Baseline + AI
+3. Nếu phát hiện anomaly → Tạo **Incident** + gửi lên Dashboard
+4. Mọi sample đều được ghi vào **Dataset** để train sau
+
+---
+
+## 📁 Cấu Trúc Thư Mục
+
+```
+PS/
+├── 📂 core-service/           # Backend Rust (Tauri)
+│   ├── 📂 src/
+│   │   ├── 📂 api/            # API endpoints cho Frontend
+│   │   │   ├── commands.rs    # Tauri commands (IPC)
+│   │   │   ├── engine_status.rs # AI Engine status structs
+│   │   │   └── mod.rs
+│   │   │
+│   │   ├── 📂 logic/          # ⭐ CORE LOGIC (Não bộ)
+│   │   │   ├── 📂 baseline/   # Baseline Learning System
+│   │   │   │   ├── mod.rs     # Analysis engine, compare logic
+│   │   │   │   ├── types.rs   # VersionedBaseline, AnomalyTag
+│   │   │   │   └── storage.rs # Persistence (save/load JSON)
+│   │   │   │
+│   │   │   ├── 📂 dataset/    # Dataset Collection (P1.3)
+│   │   │   │   ├── mod.rs     # Global logger, stats
+│   │   │   │   ├── record.rs  # DatasetRecord struct
+│   │   │   │   ├── writer.rs  # JSONL file writer
+│   │   │   │   └── export.rs  # Export utilities
+│   │   │   │
+│   │   │   ├── 📂 features/   # Feature Extraction (P1.1)
+│   │   │   │   ├── layout.rs  # ⭐ FEATURE_LAYOUT (15 features)
+│   │   │   │   ├── vector.rs  # FeatureVector struct
+│   │   │   │   ├── cpu.rs     # CPU feature extractor
+│   │   │   │   ├── memory.rs  # Memory feature extractor
+│   │   │   │   ├── network.rs # Network feature extractor
+│   │   │   │   ├── disk.rs    # Disk I/O feature extractor
+│   │   │   │   ├── process.rs # Process feature extractor
+│   │   │   │   └── mod.rs
+│   │   │   │
+│   │   │   ├── 📂 model/      # AI Model Management
+│   │   │   │   ├── inference.rs # ONNX Runtime integration
+│   │   │   │   ├── threshold.rs # Dynamic thresholds
+│   │   │   │   ├── buffer.rs  # Prediction buffer
+│   │   │   │   └── mod.rs
+│   │   │   │
+│   │   │   ├── 📂 incident/   # Incident Management (P3.1)
+│   │   │   │   ├── manager.rs # IncidentManager (in-memory)
+│   │   │   │   ├── types.rs   # Incident, DatasetRecordSummary
+│   │   │   │   └── mod.rs
+│   │   │   │
+│   │   │   ├── 📂 explain/    # Explainability Engine (P3.2)
+│   │   │   │   ├── engine.rs  # Feature contribution analysis
+│   │   │   │   └── mod.rs
+│   │   │   │
+│   │   │   ├── 📂 telemetry/  # Security Logging
+│   │   │   │   └── mod.rs
+│   │   │   │
+│   │   │   ├── 📂 policy/     # Policy Engine (Action Decision)
+│   │   │   │   └── mod.rs
+│   │   │   │
+│   │   │   ├── collector.rs   # ⭐ System Metrics Collector
+│   │   │   ├── analysis_loop.rs # ⭐ Main Analysis Thread
+│   │   │   ├── ai_bridge.rs   # AI Model bridge (prediction)
+│   │   │   ├── action_guard.rs # Action Guard (Block/Alert)
+│   │   │   ├── threat.rs      # ThreatClass enum
+│   │   │   ├── config.rs      # SafetyConfig (Kill-switches)
+│   │   │   ├── events.rs      # Tauri event emitter
+│   │   │   └── mod.rs
+│   │   │
+│   │   └── main.rs            # ⭐ Entry point, Tauri setup
+│   │
+│   ├── Cargo.toml             # Rust dependencies
+│   └── tauri.conf.json        # Tauri configuration
+│
+├── 📂 web-app/                # Frontend React
+│   ├── 📂 src/
+│   │   ├── 📂 components/     # UI Components
+│   │   │   ├── TitleBar.jsx   # Custom window title bar
+│   │   │   ├── Header.jsx     # Dashboard header
+│   │   │   ├── Sidebar.jsx    # Navigation sidebar
+│   │   │   ├── AiEngineStatus.jsx # AI status panel
+│   │   │   ├── IncidentPanel.jsx  # Security incidents
+│   │   │   ├── ApprovalModal.jsx  # Action approval modal
+│   │   │   ├── UsageChart.jsx # Performance chart
+│   │   │   ├── 📂 cards/      # Stat cards (CPU, RAM, GPU...)
+│   │   │   │   ├── CpuCard.jsx
+│   │   │   │   ├── MemoryCard.jsx
+│   │   │   │   ├── NetworkCard.jsx
+│   │   │   │   ├── ProcessesCard.jsx
+│   │   │   │   ├── GpuCard.jsx
+│   │   │   │   ├── AiStatusCard.jsx
+│   │   │   │   └── index.js
+│   │   │   └── index.js
+│   │   │
+│   │   ├── � pages/
+│   │   │   └── Dashboard.jsx  # Main dashboard page
+│   │   │
+│   │   ├── 📂 services/
+│   │   │   └── tauriApi.js    # Tauri IPC wrapper
+│   │   │
+│   │   ├── 📂 hooks/
+│   │   │   └── useActionGuard.js # Action Guard hook
+│   │   │
+│   │   ├── 📂 styles/         # CSS Styles
+│   │   │   ├── 📂 components/ # Component-specific CSS
+│   │   │   │   ├── titlebar.css
+│   │   │   │   ├── header.css
+│   │   │   │   ├── sidebar.css
+│   │   │   │   ├── ai-engine-status.css
+│   │   │   │   ├── incident-panel.css
+│   │   │   │   ├── buttons.css
+│   │   │   │   ├── modal.css
+│   │   │   │   └── dashboard.css
+│   │   │   ├── � pages/
+│   │   │   │   └── dashboard.css
+│   │   │   ├── index.css      # Global styles + Design tokens
+│   │   │   └── layout.css     # Layout utilities
+│   │   │
+│   │   ├── App.jsx            # Root component
+│   │   ├── App.css
+│   │   └── main.jsx           # React entry
+│   │
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+│
+├── 📂 ai-trainer/             # Python AI Training
+│   ├── train.py               # Model training script
+│   ├── convert_to_onnx.py     # Convert to ONNX format
+│   └── requirements.txt
+│
+├── 📂 models/                 # AI Model Files
+│   ├── core.sys               # Encrypted Global Model (ONNX)
+│   └── profile.sys            # Encrypted Profile Model
+│
+├── 📂 manual_tests/           # Test Scripts
+│   ├── test_process_storm.bat # Process Storm attack simulation
+│   ├── test_model_failover.bat # AI failover test
+│   └── restore_model.bat      # Restore after tests
+│
+├── 📄 README.md               # This file
+├── 📄 CHANGELOG-v1.0.md       # Version changelog
+├── 📄 DEMO_SCRIPT.md          # 5-minute demo script
+├── 📄 FAST_DEMO.md            # 1-minute quick demo
+└── 📄 package.json            # Root package.json
+```
+
+---
+
+## 📦 Chi Tiết Từng Module
+
+### 🔵 Core Service (Rust Backend)
+
+#### `logic/collector.rs`
+**Mục đích**: Thu thập metrics hệ thống real-time.
+- Sử dụng `sysinfo` crate để lấy CPU, RAM, Disk, Network, Process list.
+- Interval: 2 giây.
+- Output: `SummaryVector` với 15 features.
+
+#### `logic/analysis_loop.rs`
+**Mục đích**: Xử lý trung tâm, kết nối Collector → Baseline → Incident.
+- Chạy trong thread riêng.
+- Lấy pending summaries từ Collector.
+- Gọi `baseline::analyze_summary()` để phân tích.
+- Gọi `incident::process_event()` nếu phát hiện anomaly.
+- Gọi `dataset::log()` để lưu mọi sample.
+
+#### `logic/baseline/mod.rs`
+**Mục đích**: Baseline Learning + Anomaly Detection.
+- **Learning Mode**: Thu thập samples để tính mean/variance.
+- **Stable Mode**: So sánh current features với baseline.
+- **Heuristic Fallback**: Hard rules khi baseline chưa sẵn sàng.
+- Chống nhiễm độc: Không học mẫu có score ≥ 0.5.
+
+#### `logic/features/layout.rs`
+**Mục đích**: Định nghĩa Feature Schema (Single Source of Truth).
+```rust
+pub const FEATURE_LAYOUT: &[&str] = &[
+    "cpu_percent",           // 0
+    "cpu_spike_rate",        // 1
+    "memory_percent",        // 2
+    "memory_spike_rate",     // 3
+    "network_sent_rate",     // 4
+    "network_recv_rate",     // 5
+    "network_ratio",         // 6
+    "disk_read_rate",        // 7
+    "disk_write_rate",       // 8
+    "combined_io",           // 9
+    "unique_processes",      // 10
+    "new_process_rate",      // 11
+    "process_churn_rate",    // 12
+    "cpu_memory_product",    // 13
+    "spike_correlation",     // 14
+];
+```
+
+#### `logic/incident/manager.rs`
+**Mục đích**: Quản lý Incident lifecycle.
+- Tạo Incident mới khi phát hiện anomaly.
+- Gom nhóm events trong 60s window.
+- Gọi Explainability Engine để giải thích.
+
+#### `logic/explain/engine.rs`
+**Mục đích**: Trả lời câu hỏi "Tại sao phát hiện?".
+- Tính contribution của từng feature.
+- Map sang human-readable description.
+- Output: Top 5 features đóng góp nhiều nhất.
+
+#### `logic/config.rs`
+**Mục đích**: Kill-switches cho safety.
+- `AI_ENABLED`: Bật/tắt AI inference.
+- `EXPLAIN_ENABLED`: Bật/tắt explainability.
+- `AUTO_BLOCK_ENABLED`: Bật/tắt auto-blocking (v1.0 = false).
+
+### 🟣 Web App (React Frontend)
+
+#### `components/AiEngineStatus.jsx`
+**Mục đích**: Panel hiển thị trạng thái AI Engine.
+- Model status (Active/Fallback).
+- Baseline mode (Learning/Stable).
+- Dataset statistics (Records count, breakdown).
+
+#### `components/IncidentPanel.jsx`
+**Mục đích**: Danh sách Security Incidents.
+- Real-time polling (5s).
+- Timeline view với severity badges.
+- Explainability section ("Why was this detected?").
+
+#### `services/tauriApi.js`
+**Mục đích**: Wrapper cho Tauri IPC.
+- `getSystemStatus()`, `getAiStatus()`.
+- `startCollector()`, `stopCollector()`.
+- `getIncidents()`, `getIncidentDetail()`.
+
+---
+
+## 🔧 Cài Đặt & Chạy
+
+### Yêu cầu
+- **Node.js** >= 18
+- **Rust** >= 1.70
+- **Windows 10/11**
+
+### Development
 ```bash
+# Clone repository
+git clone https://github.com/oneone404/One-Shield.git
+cd One-Shield
+
+# Install dependencies
 npm install
+
+# Run in development mode
 npm run tauri dev
 ```
-2. Train Model (Optional):
+
+### Production Build
 ```bash
-cd ai-trainer
-pip install -r requirements.txt
-python train.py
+npm run tauri build
+```
+Output: `core-service/target/release/one-shield.exe`
+
+---
+
+## 🧪 Test & Demo
+
+### Quick Demo (1 phút)
+Xem file [FAST_DEMO.md](./FAST_DEMO.md).
+
+### Manual Tests
+
+**Test 1: Process Storm Attack**
+```powershell
+.\manual_tests\test_process_storm.bat
+```
+Expected: Dashboard hiện Incident với tags `PROCESSSPIKE`, `HIGHCHURNRATE`.
+
+**Test 2: Model Failover**
+```powershell
+.\manual_tests\test_model_failover.bat
+# Restart app
+# Observe: AI Engine shows "Fallback Mode"
 ```
 
-## 📄 License
-MIT License.
+**Restore**
+```powershell
+.\manual_tests\restore_model.bat
+```
+
+---
+
+## 🚀 Roadmap v1.1
+
+| Tính năng | Mô tả | Priority |
+|-----------|-------|----------|
+| **Delayed Baseline** | Chỉ học sau X giờ ổn định | 🔴 High |
+| **Signed App Whitelist** | Chỉ học app có chữ ký số | 🔴 High |
+| **Process Tree Analysis** | Phân tích Parent-Child relationship | 🔴 High |
+| **Multi-Feature Voting** | Tất cả 6 nhóm phải sạch mới học | 🟡 Medium |
+| **SQLite Database** | Lưu Incidents persistent | 🟡 Medium |
+| **Auto-Block Execution** | Tự động kill process nguy hiểm | 🟡 Medium |
+| **Cloud Sync** | Đồng bộ model/baseline lên cloud | 🟢 Low |
+
+---
+
+## � License
+
+MIT License - See [LICENSE](./LICENSE) file.
+
+---
+
+## 👨‍💻 Author
+
+**oneone404** - [GitHub](https://github.com/oneone404)
+
+---
+
+<p align="center">
+  <b>One-Shield v1.0.0</b> - Built with ❤️ and AI
+</p>
