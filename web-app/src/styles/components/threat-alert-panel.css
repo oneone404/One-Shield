@@ -82,6 +82,51 @@
     color: rgba(255, 255, 255, 0.7);
 }
 
+/* Test Button */
+.panel-header .test-btn {
+    padding: 6px 12px;
+    border: none;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fff;
+    transition: all 0.2s ease;
+}
+
+.panel-header .test-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.panel-header .test-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Test Result */
+.test-result {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    animation: slideDown 0.3s ease;
+}
+
+.test-result.success {
+    background: rgba(46, 213, 115, 0.15);
+    border: 1px solid rgba(46, 213, 115, 0.3);
+    color: #2ed573;
+}
+
+.test-result.error {
+    background: rgba(255, 71, 87, 0.15);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    color: #ff4757;
+}
+
 /* Stats Grid */
 .threat-stats-grid {
     display: grid;

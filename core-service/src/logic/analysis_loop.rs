@@ -1,14 +1,26 @@
 use std::thread;
 use std::time::Duration;
-use crate::logic::{collector, baseline, incident};
+use std::sync::atomic::{AtomicU64, Ordering};
+use crate::logic::{collector, baseline, incident, events};
 use crate::logic::features::vector::FeatureVector;
 use crate::logic::dataset::DatasetRecord;
 use crate::logic::threat::ThreatClass;
+use crate::logic::advanced_detection::injection;
+
+// Track last injection check time
+static LAST_INJECTION_CHECK: AtomicU64 = AtomicU64::new(0);
+const INJECTION_CHECK_INTERVAL_MS: u64 = 10_000; // Check every 10 seconds
 
 pub fn start() {
+    // Initialize injection detection
+    injection::init();
+
     thread::spawn(move || {
         log::info!("Analysis Engine loop started");
         loop {
+            // === ADVANCED DETECTION: Injection Check ===
+            check_injection_patterns();
+
             let pending = collector::get_pending_summaries();
             if pending.is_empty() {
                 // Sleep short interval to be responsive
@@ -64,4 +76,79 @@ pub fn start() {
             }
         }
     });
+}
+
+/// Check running processes for injection patterns
+fn check_injection_patterns() {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64;
+
+    let last_check = LAST_INJECTION_CHECK.load(Ordering::Relaxed);
+
+    // Only check every INJECTION_CHECK_INTERVAL_MS
+    if now - last_check < INJECTION_CHECK_INTERVAL_MS {
+        return;
+    }
+
+    LAST_INJECTION_CHECK.store(now, Ordering::Relaxed);
+
+    // Get running processes
+    let processes = collector::get_running_processes(100);
+
+    let mut total_alerts = 0;
+
+    for proc in processes {
+        // Skip common safe processes
+        if is_safe_process(&proc.name) {
+            continue;
+        }
+
+        // Analyze for injection patterns
+        let alerts = injection::analyze_process(
+            proc.pid,
+            &proc.name,
+            "", // No cmdline available from ProcessInfo
+            None,
+            None,
+        );
+
+        if !alerts.is_empty() {
+            total_alerts += alerts.len();
+
+            // Emit event for each critical alert
+            for alert in &alerts {
+                if alert.is_critical() {
+                    log::warn!(
+                        "[INJECTION DETECTED] {} -> {} ({})",
+                        alert.source_name,
+                        alert.target_name,
+                        alert.mitre_id
+                    );
+
+                    // Emit event to frontend
+                    events::emit_injection_detected(alert);
+                }
+            }
+        }
+    }
+
+    if total_alerts > 0 {
+        log::info!("[Advanced Detection] Found {} injection alerts", total_alerts);
+    }
+}
+
+/// Check if process is commonly safe (skip scanning)
+fn is_safe_process(name: &str) -> bool {
+    let safe_list = [
+        "svchost.exe", "csrss.exe", "wininit.exe", "services.exe",
+        "lsass.exe", "smss.exe", "System", "Registry", "Idle",
+        "explorer.exe", "dwm.exe", "sihost.exe", "taskhostw.exe",
+        "conhost.exe", "fontdrvhost.exe", "WmiPrvSE.exe",
+        // Development tools
+        "Code.exe", "node.exe", "cargo.exe", "rustc.exe",
+    ];
+
+    safe_list.iter().any(|&s| name.eq_ignore_ascii_case(s))
 }

