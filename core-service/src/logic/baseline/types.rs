@@ -260,3 +260,243 @@ impl From<&VersionedBaseline> for LegacyBaselineProfile {
         }
     }
 }
+
+// ============================================================================
+// PHASE 1: ANTI-POISONING TYPES (v1.1)
+// ============================================================================
+
+/// Sample đang chờ xét duyệt trong Quarantine Queue
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PendingSample {
+    pub id: String,
+    pub features: Vec<f32>,
+    pub first_seen: i64,          // Unix timestamp khi sample được thêm vào queue
+    pub last_checked: i64,        // Unix timestamp lần check gần nhất
+    pub clean_streak: u32,        // Số lần liên tiếp được đánh giá sạch
+    pub total_checks: u32,        // Tổng số lần check
+    pub ml_scores: Vec<f32>,      // Lịch sử ML scores
+    pub avg_score: f32,           // Score trung bình
+}
+
+impl PendingSample {
+    pub fn new(features: Vec<f32>) -> Self {
+        let now = chrono::Utc::now().timestamp();
+        Self {
+            id: uuid::Uuid::new_v4().to_string(),
+            features,
+            first_seen: now,
+            last_checked: now,
+            clean_streak: 0,
+            total_checks: 0,
+            ml_scores: Vec::new(),
+            avg_score: 0.0,
+        }
+    }
+
+    /// Cập nhật với score mới
+    pub fn update_score(&mut self, score: f32, is_clean: bool) {
+        self.last_checked = chrono::Utc::now().timestamp();
+        self.total_checks += 1;
+        self.ml_scores.push(score);
+
+        // Giữ tối đa 100 scores gần nhất
+        if self.ml_scores.len() > 100 {
+            self.ml_scores.remove(0);
+        }
+
+        // Tính average score
+        self.avg_score = self.ml_scores.iter().sum::<f32>() / self.ml_scores.len() as f32;
+
+        // Cập nhật clean streak
+        if is_clean {
+            self.clean_streak += 1;
+        } else {
+            self.clean_streak = 0;
+        }
+    }
+
+    /// Thời gian chờ (phút)
+    pub fn wait_time_minutes(&self) -> f32 {
+        let now = chrono::Utc::now().timestamp();
+        (now - self.first_seen) as f32 / 60.0
+    }
+}
+
+/// Thống kê Quarantine Queue (cho UI)
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct QuarantineStats {
+    pub pending: usize,           // Số sample đang chờ
+    pub accepted: usize,          // Tổng số đã chấp nhận học
+    pub rejected: usize,          // Tổng số bị từ chối
+    pub avg_delay_minutes: f32,   // Thời gian chờ trung bình
+    pub oldest_sample_minutes: f32, // Sample cũ nhất đã chờ bao lâu
+    pub queue_health: QueueHealth,  // Trạng thái queue
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub enum QueueHealth {
+    #[default]
+    Healthy,            // Queue hoạt động bình thường
+    Warning,            // Queue đang đầy hoặc có vấn đề nhỏ
+    Critical,           // Queue bị overflow hoặc có vấn đề nghiêm trọng
+    Paused,             // Learning đang bị tạm dừng
+}
+
+/// Entry trong Audit Log
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuditLogEntry {
+    pub timestamp: i64,           // Unix timestamp
+    pub action: AuditAction,      // Loại action
+    pub sample_id: Option<String>,// ID của sample liên quan
+    pub features_changed: Vec<String>, // Features bị thay đổi
+    pub drift_score: f32,         // Drift score tại thời điểm này
+    pub details: String,          // Chi tiết thêm
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum AuditAction {
+    BaselineUpdate,       // Baseline được cập nhật
+    BaselineReset,        // Baseline bị reset
+    BaselineRollback,     // Rollback về snapshot cũ
+    SampleAccepted,       // Sample được chấp nhận học
+    SampleRejected,       // Sample bị từ chối
+    DriftAlert,           // Cảnh báo drift bất thường
+    LearningPaused,       // Learning bị tạm dừng
+    LearningResumed,      // Learning được resume
+    SnapshotCreated,      // Tạo snapshot mới
+}
+
+impl AuditLogEntry {
+    pub fn new(action: AuditAction) -> Self {
+        Self {
+            timestamp: chrono::Utc::now().timestamp(),
+            action,
+            sample_id: None,
+            features_changed: Vec::new(),
+            drift_score: 0.0,
+            details: String::new(),
+        }
+    }
+
+    pub fn with_sample(mut self, sample_id: &str) -> Self {
+        self.sample_id = Some(sample_id.to_string());
+        self
+    }
+
+    pub fn with_features(mut self, features: Vec<String>) -> Self {
+        self.features_changed = features;
+        self
+    }
+
+    pub fn with_drift(mut self, drift: f32) -> Self {
+        self.drift_score = drift;
+        self
+    }
+
+    pub fn with_details(mut self, details: &str) -> Self {
+        self.details = details.to_string();
+        self
+    }
+}
+
+/// Kết quả kiểm tra Drift
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DriftResult {
+    Normal,                       // Drift trong giới hạn cho phép
+    Warning { drift: f32, message: String },  // Drift đáng chú ý
+    Alert { drift: f32, message: String },    // Drift nghiêm trọng - cần pause
+    PauseLearning { drift: f32, reason: String }, // Drift quá cao - pause learning
+}
+
+impl DriftResult {
+    pub fn is_safe(&self) -> bool {
+        matches!(self, DriftResult::Normal)
+    }
+
+    pub fn drift_value(&self) -> f32 {
+        match self {
+            DriftResult::Normal => 0.0,
+            DriftResult::Warning { drift, .. } => *drift,
+            DriftResult::Alert { drift, .. } => *drift,
+            DriftResult::PauseLearning { drift, .. } => *drift,
+        }
+    }
+}
+
+/// Snapshot của Baseline để rollback
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BaselineSnapshot {
+    pub id: String,
+    pub timestamp: i64,           // Unix timestamp khi tạo snapshot
+    pub baseline: VersionedBaseline,
+    pub trigger: SnapshotTrigger, // Lý do tạo snapshot
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum SnapshotTrigger {
+    Scheduled,            // Snapshot định kỳ
+    ManualBackup,         // User request backup
+    BeforeReset,          // Trước khi reset baseline
+    DriftAlert,           // Khi phát hiện drift bất thường
+}
+
+impl BaselineSnapshot {
+    pub fn new(baseline: VersionedBaseline, trigger: SnapshotTrigger) -> Self {
+        Self {
+            id: uuid::Uuid::new_v4().to_string(),
+            timestamp: chrono::Utc::now().timestamp(),
+            baseline,
+            trigger,
+        }
+    }
+
+    /// Tuổi của snapshot (giờ)
+    pub fn age_hours(&self) -> f32 {
+        let now = chrono::Utc::now().timestamp();
+        (now - self.timestamp) as f32 / 3600.0
+    }
+}
+
+/// Cấu hình cho Anti-Poisoning
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AntiPoisoningConfig {
+    // Quarantine settings
+    pub quarantine_delay_hours: u32,      // Chờ bao lâu trước khi học (mặc định: 6)
+    pub quarantine_clean_streak: u32,     // Cần bao nhiêu checks sạch liên tiếp (mặc định: 180)
+    pub quarantine_max_size: usize,       // Max samples trong queue (mặc định: 10000)
+
+    // Drift settings
+    pub drift_max_per_hour: f32,          // Max drift cho phép/giờ (mặc định: 0.05 = 5%)
+    pub drift_alert_threshold: f32,       // Alert nếu drift > này (mặc định: 0.10 = 10%)
+
+    // Snapshot settings
+    pub snapshot_interval_minutes: u32,   // Snapshot mỗi X phút (mặc định: 60)
+    pub snapshot_max_count: usize,        // Giữ tối đa bao nhiêu snapshots (mặc định: 24)
+
+    // Feature voting
+    pub require_all_groups_clean: bool,   // Tất cả 6 nhóm phải sạch mới học (mặc định: true)
+}
+
+impl Default for AntiPoisoningConfig {
+    fn default() -> Self {
+        Self {
+            quarantine_delay_hours: 6,
+            quarantine_clean_streak: 180,
+            quarantine_max_size: 10_000,
+            drift_max_per_hour: 0.05,
+            drift_alert_threshold: 0.10,
+            snapshot_interval_minutes: 60,
+            snapshot_max_count: 24,
+            require_all_groups_clean: true,
+        }
+    }
+}
+
+/// Kết quả Multi-Feature Voting
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FeatureVotingResult {
+    pub can_learn: bool,
+    pub clean_groups: Vec<String>,
+    pub dirty_groups: Vec<String>,
+    pub group_scores: Vec<(String, f32)>,  // (group_name, deviation_score)
+}

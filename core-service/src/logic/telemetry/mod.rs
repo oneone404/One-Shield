@@ -25,6 +25,9 @@
 //! telemetry::shutdown();
 //! ```
 
+// Allow unused - some exports for future use
+#![allow(unused)]
+
 pub mod event;
 pub mod recorder;
 pub mod exporter;

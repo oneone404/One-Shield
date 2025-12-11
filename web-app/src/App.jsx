@@ -5,7 +5,11 @@ import TitleBar from './components/TitleBar'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import ApprovalModal from './components/ApprovalModal'
+
+// Pages
 import Dashboard from './pages/Dashboard'
+import ExecutiveDashboard from './pages/ExecutiveDashboard'
+import Settings from './pages/Settings'
 
 import * as api from './services/tauriApi'
 import { useActionGuard } from './hooks/useActionGuard'
@@ -94,6 +98,7 @@ function App() {
   const getPageTitle = () => {
     const titles = {
       dashboard: 'Dashboard',
+      executive: 'Executive Report',
       monitoring: 'Monitoring',
       alerts: 'Alerts',
       processes: 'Processes',
@@ -114,6 +119,8 @@ function App() {
   const renderPage = () => {
     switch (activePage) {
       case 'dashboard': return <Dashboard isMonitoring={isMonitoring} />
+      case 'executive': return <ExecutiveDashboard />
+      case 'settings': return <Settings />
       default: return <PagePlaceholder title={getPageTitle()} />
     }
   }

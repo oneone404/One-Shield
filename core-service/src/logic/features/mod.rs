@@ -7,6 +7,9 @@
 //! - `layout.rs` - Centralized feature schema (authoritative)
 //! - `vector.rs` - Versioned FeatureVector with validation
 
+// Allow unused - some exports for future use
+#![allow(unused)]
+
 // Feature layout (MUST be first - others depend on it)
 pub mod layout;
 

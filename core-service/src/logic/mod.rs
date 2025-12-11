@@ -21,6 +21,23 @@
 //! - `event.rs` - SecurityEvent struct (audit trail)
 //! - `recorder.rs` - Append-only JSONL writer
 //! - `exporter.rs` - Export & analytics
+//!
+//! ### Process Intelligence (`process_intel/`) - Phase 2
+//! - `signature.rs` - Authenticode signature verification
+//! - `tree.rs` - Process tree analysis
+//! - `spawn.rs` - LOLBin & suspicious spawn detection
+//! - `reputation.rs` - Executable reputation database
+//!
+//! ### Behavioral Signatures (`behavioral_sigs/`) - Phase 3
+//! - `beaconing.rs` - C2 beaconing detection
+//! - `persistence.rs` - Registry persistence monitoring
+//! - `never_learn.rs` - Never-learn blacklist
+//! - `rules.rs` - Behavioral rules engine
+//!
+//! ### External Intelligence (`external_intel/`) - Phase 4
+//! - `virustotal.rs` - VirusTotal API integration
+//! - `threat_feed.rs` - Cloud threat feed sync
+//! - `mitre.rs` - MITRE ATT&CK mapping
 
 // Core modules
 pub mod collector;
@@ -49,3 +66,17 @@ pub mod features;
 // AI/ML inference
 pub mod model;
 
+// Process Intelligence (Phase 2)
+pub mod process_intel;
+
+// Behavioral Signatures (Phase 3)
+pub mod behavioral_sigs;
+
+// External Intelligence (Phase 4)
+pub mod external_intel;
+
+// Response & Automation (Phase 5)
+pub mod response;
+
+// Enterprise Features (Phase 6)
+pub mod enterprise;

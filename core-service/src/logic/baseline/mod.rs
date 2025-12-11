@@ -1,23 +1,40 @@
-//! Baseline Module - Behavioral Analysis Engine (P1.2)
+//! Baseline Module - Behavioral Analysis Engine (P1.2 + v1.1 Anti-Poisoning)
 //!
 //! Manages versioned baseline profiles and detects anomalies based on
 //! deviations from learned behavior.
 //!
 //! # Architecture
-//! - `types.rs`: `VersionedBaseline`, `AnomalyTag`
+//! - `types.rs`: `VersionedBaseline`, `AnomalyTag`, Anti-Poisoning types
 //! - `validate.rs`: Layout/Version validation
 //! - `storage.rs`: Persistent storage with validation
+//! - `audit.rs`: Audit log for baseline changes (v1.1)
+//! - `quarantine.rs`: Quarantine queue for sample validation (v1.1)
+//! - `drift.rs`: Drift monitoring (v1.1)
+//! - `history.rs`: Baseline snapshots & rollback (v1.1)
 //!
 //! # Failure Strategy
 //! If baseline version/layout mismatches on load -> Reset baseline safely.
+//!
+//! # Anti-Poisoning (v1.1)
+//! - Delayed Learning: Samples must be clean for X hours before learning
+//! - Multi-Feature Voting: All 6 feature groups must pass
+//! - Drift Monitoring: Alert if baseline shifts too fast
+//! - Rollback: Snapshot history allows reverting to clean state
+
+// Allow unused - some exports for future use
+#![allow(unused)]
 
 pub mod types;
 pub mod validate;
 pub mod storage;
+pub mod audit;
+pub mod quarantine;
+pub mod drift;
+pub mod history;
 #[cfg(test)]
 mod tests;
 
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicBool, Ordering};
 use parking_lot::RwLock;
 use chrono::{DateTime, Utc, Timelike};
 
@@ -26,7 +43,11 @@ use crate::logic::features::layout::FEATURE_COUNT;
 
 pub use types::{
     VersionedBaseline, AnomalyTag, AnalysisResult, TagDetail,
-    LegacyBaselineProfile as BaselineProfile // Alias for backward compat
+    LegacyBaselineProfile as BaselineProfile, // Alias for backward compat
+    // v1.1 Anti-Poisoning exports
+    PendingSample, QuarantineStats, QueueHealth,
+    AuditLogEntry, AuditAction, DriftResult, BaselineSnapshot,
+    AntiPoisoningConfig, FeatureVotingResult, SnapshotTrigger,
 };
 
 // ============================================================================
@@ -46,12 +67,13 @@ const OUTLIER_STDS: f32 = 2.0;
 static GLOBAL_BASELINE: RwLock<Option<VersionedBaseline>> = RwLock::new(None);
 static ANALYSIS_HISTORY: RwLock<Vec<AnalysisResult>> = RwLock::new(Vec::new());
 static ANOMALY_COUNT: AtomicU32 = AtomicU32::new(0);
+static ANTI_POISONING_ENABLED: AtomicBool = AtomicBool::new(true);
 
 // ============================================================================
 // INITIALIZATION & MANAGEMENT
 // ============================================================================
 
-/// Initialize baseline engine
+/// Initialize baseline engine with Anti-Poisoning (v1.1)
 /// Loads from disk or creates new if missing/invalid
 pub fn init() {
     let mut global = GLOBAL_BASELINE.write();
@@ -64,7 +86,10 @@ pub fn init() {
         Ok(b) => {
             log::info!("Loaded baseline '{}' v{} (hash: {:x}, samples: {})",
                 b.name, b.feature_version, b.layout_hash, b.samples);
-            *global = Some(b);
+            *global = Some(b.clone());
+
+            // v1.1: Initialize Anti-Poisoning modules
+            init_anti_poisoning(&b);
         },
         Err(e) => {
             log::warn!("Baseline load failed/invalid: {}. Initializing new baseline.", e);
@@ -75,13 +100,47 @@ pub fn init() {
                 log::error!("Failed to save new baseline: {}", save_err);
             }
 
-            *global = Some(new_b);
+            *global = Some(new_b.clone());
+
+            // v1.1: Initialize Anti-Poisoning modules
+            init_anti_poisoning(&new_b);
         }
     }
 }
 
+/// Initialize Anti-Poisoning subsystems (v1.1)
+fn init_anti_poisoning(baseline: &VersionedBaseline) {
+    let config = AntiPoisoningConfig::default();
+
+    // Initialize quarantine
+    quarantine::init(config.clone());
+
+    // Initialize drift monitor
+    drift::init(
+        config.drift_max_per_hour,
+        config.drift_alert_threshold,
+        config.drift_alert_threshold * 2.0, // pause threshold = 2x alert
+    );
+    drift::record_baseline(baseline);
+
+    // Initialize history
+    history::init(config.snapshot_interval_minutes, config.snapshot_max_count);
+
+    // Load audit log
+    let _ = audit::load_from_disk();
+
+    log::info!("Anti-Poisoning v1.1 initialized");
+}
+
 /// Reset baseline to empty state
+/// v1.1: Creates snapshot before reset for rollback capability
 pub fn reset_baseline() {
+    // v1.1: Create snapshot before reset
+    if let Some(current) = GLOBAL_BASELINE.read().as_ref() {
+        history::create_snapshot(current, SnapshotTrigger::BeforeReset);
+        audit::log_action(AuditAction::BaselineReset);
+    }
+
     let mut global = GLOBAL_BASELINE.write();
     let new_b = storage::new_baseline("default");
 
@@ -94,7 +153,12 @@ pub fn reset_baseline() {
     *global = Some(new_b);
     ANOMALY_COUNT.store(0, Ordering::SeqCst);
     ANALYSIS_HISTORY.write().clear();
-    log::info!("Baseline has been definitely reset");
+
+    // v1.1: Clear quarantine and reset drift monitor
+    quarantine::clear();
+    drift::reset();
+
+    log::info!("Baseline has been reset (snapshot created for rollback)");
 }
 
 /// Get snapshot of global baseline (converted to legacy format for UI)
@@ -376,14 +440,111 @@ fn calculate_tag_score(tags: &[AnomalyTag]) -> f32 {
     (base + boost).min(1.0)
 }
 
+/// Update baseline with new sample (v1.1: Uses Quarantine Queue)
+///
+/// Flow:
+/// 1. Add sample to quarantine queue
+/// 2. Check feature voting (all 6 groups must be clean)
+/// 3. After delay period, approved samples are learned
+/// 4. Monitor drift and pause if abnormal
 fn update_global_baseline(features: &FeatureVector) {
+    // v1.1: Check if anti-poisoning is enabled
+    if ANTI_POISONING_ENABLED.load(Ordering::SeqCst) {
+        update_baseline_with_quarantine(features);
+    } else {
+        update_baseline_direct(features);
+    }
+}
+
+/// v1.1: Update with quarantine queue protection
+fn update_baseline_with_quarantine(features: &FeatureVector) {
+    // Check if learning is paused due to drift
+    if quarantine::is_learning_paused() {
+        log::trace!("Learning paused, skipping baseline update");
+        return;
+    }
+
+    // Get current baseline for voting check
+    let (mean, variance) = {
+        let global = GLOBAL_BASELINE.read();
+        if let Some(b) = global.as_ref() {
+            (b.mean.to_vec(), b.variance.to_vec())
+        } else {
+            return;
+        }
+    };
+
+    // Add to quarantine (will be evaluated over time)
+    let sample_id = quarantine::add_sample(features);
+
+    // Check feature voting
+    let voting = quarantine::check_feature_voting(features, &mean, &variance);
+
+    // Update sample with voting result (score = 0.0 for now, will be updated by analysis)
+    quarantine::update_sample(&sample_id, 0.0, &voting);
+
+    // Process approved samples (those that passed quarantine period)
+    let approved = quarantine::get_approved_samples();
+    for (id, approved_features) in approved {
+        // Get changed features for audit
+        let changed: Vec<String> = approved_features.iter().enumerate()
+            .filter(|(i, &v)| {
+                if *i < mean.len() {
+                    (v - mean[*i]).abs() > variance[*i].sqrt() * 0.5
+                } else {
+                    false
+                }
+            })
+            .map(|(i, _)| crate::logic::features::layout::FEATURE_LAYOUT[i].to_string())
+            .collect();
+
+        // Actually learn the sample
+        learn_sample_direct(&approved_features);
+
+        // Check drift after learning
+        if let Some(baseline) = GLOBAL_BASELINE.read().as_ref() {
+            let drift_result = drift::check_drift(baseline);
+            let drift_value = drift_result.drift_value();
+
+            // Log to audit
+            audit::log_baseline_update(&id, changed, drift_value);
+
+            // Handle drift result
+            match drift_result {
+                DriftResult::PauseLearning { reason, .. } => {
+                    quarantine::pause_learning(&reason);
+                    // Create snapshot before pause
+                    history::create_snapshot(baseline, SnapshotTrigger::DriftAlert);
+                }
+                DriftResult::Alert { message, .. } => {
+                    log::warn!("Drift alert: {}", message);
+                }
+                _ => {}
+            }
+
+            // Record baseline state for drift tracking
+            drift::record_baseline(baseline);
+
+            // Maybe create scheduled snapshot
+            history::maybe_create_scheduled_snapshot(baseline);
+        }
+    }
+}
+
+/// Direct baseline update (legacy mode, when anti-poisoning is disabled)
+fn update_baseline_direct(features: &FeatureVector) {
+    learn_sample_direct(&features.values.to_vec());
+}
+
+/// Core learning logic (shared by both modes)
+fn learn_sample_direct(features: &[f32]) {
     let mut global = GLOBAL_BASELINE.write();
     if let Some(baseline) = global.as_mut() {
         let alpha = 0.1;
 
         // Iterative Mean/Variance update
-        for i in 0..FEATURE_COUNT {
-            let x = features.values[i];
+        for i in 0..FEATURE_COUNT.min(features.len()) {
+            let x = features[i];
             let diff = x - baseline.mean[i];
 
             // Update Mean
@@ -391,8 +552,6 @@ fn update_global_baseline(features: &FeatureVector) {
             baseline.mean[i] = new_mean;
 
             // Update Variance (Welford's approx for EMA)
-            // Var_new = (1-alpha)*Var_old + alpha*(diff * (x - new_mean))
-            // Note: Diff calculation for variance update usually uses (x - mean_old) * (x - mean_new)
             let diff_new = x - new_mean;
             baseline.variance[i] = (1.0 - alpha) * baseline.variance[i] + alpha * diff * diff_new;
         }
@@ -400,7 +559,7 @@ fn update_global_baseline(features: &FeatureVector) {
         baseline.samples += 1;
         baseline.last_updated = Utc::now().timestamp();
 
-        // Save periodically (simple check)
+        // Save periodically
         if baseline.samples % 10 == 0 {
             let path = storage::get_default_baseline_path();
             let _ = storage::save_baseline(baseline, &path);
@@ -476,3 +635,154 @@ pub fn analyze_summary_15(
     analyze_summary(summary_id, &features, ml_score)
 }
 
+// ============================================================================
+// ANTI-POISONING API (v1.1)
+// ============================================================================
+
+/// Get quarantine statistics (for UI)
+pub fn get_quarantine_stats() -> QuarantineStats {
+    quarantine::get_stats()
+}
+
+/// Get drift statistics (for UI)
+pub fn get_drift_stats() -> drift::DriftStats {
+    drift::get_stats()
+}
+
+/// Get baseline history statistics (for UI)
+pub fn get_history_stats() -> history::HistoryStats {
+    history::get_stats()
+}
+
+/// Get audit log statistics
+pub fn get_audit_stats() -> audit::AuditStats {
+    audit::get_stats()
+}
+
+/// Get recent audit entries
+pub fn get_recent_audit(limit: usize) -> Vec<AuditLogEntry> {
+    audit::get_recent(limit)
+}
+
+/// Get all baseline snapshots
+pub fn get_snapshots() -> Vec<history::SnapshotInfo> {
+    history::get_all_snapshots()
+}
+
+/// Rollback baseline to specific snapshot
+pub fn rollback_to_snapshot(snapshot_id: &str) -> Result<(), String> {
+    let baseline = history::rollback(snapshot_id)?;
+
+    // Replace current baseline
+    let mut global = GLOBAL_BASELINE.write();
+    *global = Some(baseline.clone());
+
+    // Save to disk
+    let path = storage::get_default_baseline_path();
+    if let Err(e) = storage::save_baseline(&baseline, &path) {
+        return Err(format!("Failed to save rolled back baseline: {}", e));
+    }
+
+    // Reset drift monitor with new baseline
+    drift::reset();
+    drift::record_baseline(&baseline);
+
+    // Resume learning if it was paused
+    quarantine::resume_learning();
+
+    log::info!("Baseline rolled back to snapshot {}", snapshot_id);
+    Ok(())
+}
+
+/// Rollback to N hours ago
+pub fn rollback_hours_ago(hours: u32) -> Result<(), String> {
+    let baseline = history::rollback_hours_ago(hours)?;
+
+    let mut global = GLOBAL_BASELINE.write();
+    *global = Some(baseline.clone());
+
+    let path = storage::get_default_baseline_path();
+    storage::save_baseline(&baseline, &path)
+        .map_err(|e| format!("Failed to save: {}", e))?;
+
+    drift::reset();
+    drift::record_baseline(&baseline);
+    quarantine::resume_learning();
+
+    log::info!("Baseline rolled back {} hours", hours);
+    Ok(())
+}
+
+/// Enable/disable anti-poisoning protection
+pub fn set_anti_poisoning_enabled(enabled: bool) {
+    ANTI_POISONING_ENABLED.store(enabled, Ordering::SeqCst);
+    log::info!("Anti-poisoning {}", if enabled { "enabled" } else { "disabled" });
+}
+
+/// Check if anti-poisoning is enabled
+pub fn is_anti_poisoning_enabled() -> bool {
+    ANTI_POISONING_ENABLED.load(Ordering::SeqCst)
+}
+
+/// Manually pause learning (admin action)
+pub fn pause_learning(reason: &str) {
+    quarantine::pause_learning(reason);
+}
+
+/// Resume learning after pause
+pub fn resume_learning() {
+    quarantine::resume_learning();
+}
+
+/// Check if learning is paused
+pub fn is_learning_paused() -> bool {
+    quarantine::is_learning_paused()
+}
+
+/// Get pause reason if paused
+pub fn get_learning_pause_reason() -> Option<String> {
+    quarantine::get_pause_reason()
+}
+
+/// Get top features contributing to drift
+pub fn get_top_drifting_features(limit: usize) -> Vec<(String, f32)> {
+    drift::get_top_drifting_features(limit)
+}
+
+/// Update anti-poisoning configuration
+pub fn set_anti_poisoning_config(config: AntiPoisoningConfig) {
+    quarantine::set_config(config.clone());
+    drift::set_thresholds(
+        config.drift_max_per_hour,
+        config.drift_alert_threshold,
+        config.drift_alert_threshold * 2.0,
+    );
+    history::set_config(config.snapshot_interval_minutes, config.snapshot_max_count);
+}
+
+/// Get current anti-poisoning configuration
+pub fn get_anti_poisoning_config() -> AntiPoisoningConfig {
+    quarantine::get_config()
+}
+
+/// Comprehensive status for Dashboard
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct AntiPoisoningStatus {
+    pub enabled: bool,
+    pub learning_paused: bool,
+    pub pause_reason: Option<String>,
+    pub quarantine: QuarantineStats,
+    pub drift: drift::DriftStats,
+    pub snapshots_count: usize,
+}
+
+pub fn get_anti_poisoning_status() -> AntiPoisoningStatus {
+    AntiPoisoningStatus {
+        enabled: is_anti_poisoning_enabled(),
+        learning_paused: is_learning_paused(),
+        pause_reason: get_learning_pause_reason(),
+        quarantine: get_quarantine_stats(),
+        drift: get_drift_stats(),
+        snapshots_count: history::count(),
+    }
+}

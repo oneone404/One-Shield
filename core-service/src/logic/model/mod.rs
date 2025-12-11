@@ -3,6 +3,9 @@
 //! Tách logic inference khỏi data collection.
 //! Dễ dàng swap model, multi-model, ensemble.
 
+// Allow unused - some exports for future use
+#![allow(unused)]
+
 pub mod inference;
 pub mod threshold;
 pub mod buffer;

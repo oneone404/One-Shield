@@ -1,4 +1,4 @@
-//! AI Security Core - Main Entry Point (PHASE IV - ONNX Native)
+//! AI Security Core - Main Entry Point (PHASE VII - Enterprise)
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -6,6 +6,7 @@ mod api;
 mod logic;
 
 use api::commands;
+use api::enterprise;
 
 // --- Window Control Commands (Manual Implementation) ---
 #[tauri::command]
@@ -48,7 +49,7 @@ fn main() {
             .init();
     }
 
-    log::info!("Starting AI Security App v0.5.0 (Phase V - Modular Architecture)...");
+    log::info!("Starting AI Security App v2.0.0 (Phase VII - Enterprise Features)...");
 
     logic::baseline::init();
 
@@ -170,6 +171,31 @@ fn main() {
             commands::submit_user_feedback,
             commands::get_incidents,
             commands::get_incident_detail,
+
+            // Enterprise Commands (Phase 7)
+            enterprise::enterprise_login,
+            enterprise::enterprise_logout,
+            enterprise::validate_session,
+            enterprise::get_current_user,
+            enterprise::get_users,
+            enterprise::create_user,
+            enterprise::get_rbac_stats,
+            enterprise::get_policies,
+            enterprise::get_policy,
+            enterprise::sync_policies,
+            enterprise::get_policy_sync_status,
+            enterprise::get_quarantined_files,
+            enterprise::quarantine_file,
+            enterprise::restore_quarantined_file,
+            enterprise::delete_quarantined_file,
+            enterprise::get_quarantine_stats,
+            enterprise::get_webhooks,
+            enterprise::add_webhook,
+            enterprise::remove_webhook,
+            enterprise::test_webhook,
+            enterprise::get_executive_report,
+            enterprise::get_incident_summary,
+            enterprise::get_endpoint_stats,
         ])
         .run(tauri::generate_context!())
         .expect("Lỗi khi khởi chạy ứng dụng Tauri");

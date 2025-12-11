@@ -19,3 +19,27 @@ web-app/.env.local
 # OS
 .DS_Store
 Thumbs.db
+
+# AI Models (encrypted)
+*.onnx
+*.sys
+core.sys
+profile.sys
+
+# Dataset files (training data)
+*.jsonl
+dataset/
+training_data/
+
+# Logs and DB
+*.log
+*.sqlite
+*.db
+
+# Quarantine folder
+quarantine/
+
+# Secrets
+**/secrets/
+*.pem
+*.key

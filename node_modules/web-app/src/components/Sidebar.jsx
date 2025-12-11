@@ -1,11 +1,12 @@
 import {
     Home, Activity, Bell, Cpu,
     FileText, Database, Settings, Shield,
-    ChevronsLeft, Menu
+    ChevronsLeft, Menu, BarChart3
 } from 'lucide-react'
 
 const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'executive', label: 'Executive', icon: BarChart3 },
     { id: 'monitoring', label: 'Monitoring', icon: Activity },
     { id: 'alerts', label: 'Alerts', icon: Bell },
     { id: 'processes', label: 'Processes', icon: Cpu },
@@ -13,6 +14,7 @@ const menuItems = [
     { id: 'data', label: 'Training Data', icon: Database },
     { id: 'settings', label: 'Settings', icon: Settings },
 ]
+
 
 export default function Sidebar({ activePage, onPageChange, collapsed, onToggle }) {
     return (
@@ -63,7 +65,7 @@ export default function Sidebar({ activePage, onPageChange, collapsed, onToggle 
             {/* Footer */}
             <div className="sidebar-footer">
                 <div className="version-pill">
-                    <span className="v-text">v0.4.0</span>
+                    <span className="v-text">v2.0.0</span>
                 </div>
             </div>
         </aside>

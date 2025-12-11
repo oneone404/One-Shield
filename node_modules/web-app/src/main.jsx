@@ -14,6 +14,7 @@ import './styles/components/modal.css'
 import './styles/components/approval-modal.css'
 import './styles/components/chart.css'
 import './styles/components/titlebar.css'
+import './styles/components/security-logs.css'
 
 // Page Styles
 import './styles/pages/dashboard.css'

@@ -361,6 +361,108 @@ export async function getAiStatus() {
 }
 
 // ============================================================================
+// ENTERPRISE API (Phase 7)
+// ============================================================================
+
+// Authentication
+export async function enterpriseLogin(username, password) {
+    return invoke('enterprise_login', { username, password });
+}
+
+export async function enterpriseLogout(token) {
+    return invoke('enterprise_logout', { token });
+}
+
+export async function validateSession(token) {
+    return invoke('validate_session', { token });
+}
+
+export async function getCurrentUser(token) {
+    return invoke('get_current_user', { token });
+}
+
+// User Management
+export async function getUsers() {
+    return invoke('get_users');
+}
+
+export async function createUser(username, email, password, role) {
+    return invoke('create_user', { username, email, password, role });
+}
+
+export async function getRbacStats() {
+    return invoke('get_rbac_stats');
+}
+
+// Policy Management
+export async function getPolicies() {
+    return invoke('get_policies');
+}
+
+export async function getPolicy(policyId) {
+    return invoke('get_policy', { policyId });
+}
+
+export async function syncPolicies() {
+    return invoke('sync_policies');
+}
+
+export async function getPolicySyncStatus() {
+    return invoke('get_policy_sync_status');
+}
+
+// File Quarantine
+export async function getQuarantinedFiles() {
+    return invoke('get_quarantined_files');
+}
+
+export async function quarantineFile(filePath, reason) {
+    return invoke('quarantine_file', { filePath, reason });
+}
+
+export async function restoreQuarantinedFile(entryId) {
+    return invoke('restore_quarantined_file', { entryId });
+}
+
+export async function deleteQuarantinedFile(entryId) {
+    return invoke('delete_quarantined_file', { entryId });
+}
+
+export async function getQuarantineStats() {
+    return invoke('get_quarantine_stats');
+}
+
+// Webhooks
+export async function getWebhooks() {
+    return invoke('get_webhooks');
+}
+
+export async function addWebhook(name, url, platform) {
+    return invoke('add_webhook', { name, url, platform });
+}
+
+export async function removeWebhook(name) {
+    return invoke('remove_webhook', { name });
+}
+
+export async function testWebhook(name) {
+    return invoke('test_webhook', { name });
+}
+
+// Reporting
+export async function getExecutiveReport() {
+    return invoke('get_executive_report');
+}
+
+export async function getIncidentSummary(period = 'daily') {
+    return invoke('get_incident_summary', { period });
+}
+
+export async function getEndpointStats() {
+    return invoke('get_endpoint_stats');
+}
+
+// ============================================================================
 // UTILITY
 // ============================================================================
 
@@ -429,7 +531,32 @@ export default {
     getGpuMetrics,
     // AI Status (v0.5.0)
     getAiStatus,
+    // Enterprise (Phase 7)
+    enterpriseLogin,
+    enterpriseLogout,
+    validateSession,
+    getCurrentUser,
+    getUsers,
+    createUser,
+    getRbacStats,
+    getPolicies,
+    getPolicy,
+    syncPolicies,
+    getPolicySyncStatus,
+    getQuarantinedFiles,
+    quarantineFile,
+    restoreQuarantinedFile,
+    deleteQuarantinedFile,
+    getQuarantineStats,
+    getWebhooks,
+    addWebhook,
+    removeWebhook,
+    testWebhook,
+    getExecutiveReport,
+    getIncidentSummary,
+    getEndpointStats,
     // Utility
     formatBytes,
     formatDuration,
 };
+

@@ -23,6 +23,9 @@
 //! }
 //! ```
 
+// Allow unused - some exports for future use
+#![allow(unused)]
+
 pub mod types;
 pub mod config;
 pub mod engine;

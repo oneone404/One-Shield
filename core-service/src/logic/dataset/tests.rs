@@ -18,6 +18,7 @@ fn test_dataset_append_and_read() {
         score: 0.9,
         confidence: 0.8,
         threat: ThreatClass::Malicious,
+        user_label: None,
     };
 
     writer.append(&record).unwrap();
@@ -57,6 +58,7 @@ fn test_rotation_creates_new_file() {
         score: 0.0,
         confidence: 0.0,
         threat: ThreatClass::Benign,
+        user_label: None,
     };
 
     writer.append(&record).unwrap();

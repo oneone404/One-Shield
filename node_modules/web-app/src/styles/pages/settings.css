@@ -1,0 +1,436 @@
+/**
+ * Settings Page Styles
+ */
+
+.settings-page {
+    padding: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.settings-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.settings-header svg {
+    width: 28px;
+    height: 28px;
+    color: var(--accent-primary);
+}
+
+.settings-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Tabs */
+.settings-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    background: var(--glass-bg-subtle);
+    padding: 6px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    width: fit-content;
+}
+
+.settings-tabs button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.settings-tabs button svg {
+    width: 18px;
+    height: 18px;
+}
+
+.settings-tabs button:hover {
+    color: var(--text-primary);
+    background: var(--glass-bg-light);
+}
+
+.settings-tabs button.active {
+    background: var(--accent-primary);
+    color: white;
+}
+
+/* Settings Content */
+.settings-content {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.section-loading {
+    text-align: center;
+    padding: 48px;
+    color: var(--text-secondary);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.section-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Quarantine Stats */
+.quarantine-stats {
+    display: flex;
+    gap: 16px;
+}
+
+.quarantine-stats .stat-item {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.quarantine-stats .stat-item strong {
+    color: var(--text-primary);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+}
+
+.empty-state svg {
+    width: 56px;
+    height: 56px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.empty-state h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.empty-state p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Quarantine List */
+.quarantine-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.quarantine-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: var(--glass-bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.file-path {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-meta {
+    display: flex;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.file-meta .reason {
+    color: var(--color-warning);
+}
+
+.file-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.file-actions button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.file-actions button svg {
+    width: 18px;
+    height: 18px;
+}
+
+.btn-restore {
+    background: rgba(52, 152, 219, 0.15);
+    color: #3498db;
+}
+
+.btn-restore:hover {
+    background: rgba(52, 152, 219, 0.25);
+}
+
+.btn-delete {
+    background: rgba(231, 76, 60, 0.15);
+    color: var(--color-critical);
+}
+
+.btn-delete:hover {
+    background: rgba(231, 76, 60, 0.25);
+}
+
+/* Webhooks */
+.btn-add {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-add svg {
+    width: 16px;
+    height: 16px;
+}
+
+.btn-add:hover {
+    background: var(--accent-hover);
+}
+
+/* Add Webhook Form */
+.add-webhook-form {
+    background: var(--glass-bg-subtle);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+}
+
+.form-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.add-webhook-form input,
+.add-webhook-form select {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.add-webhook-form input:focus,
+.add-webhook-form select:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.add-webhook-form input::placeholder {
+    color: var(--text-muted);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.btn-cancel {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+    background: var(--glass-bg-light);
+    color: var(--text-primary);
+}
+
+.btn-save {
+    padding: 8px 16px;
+    background: var(--accent-primary);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-save:hover {
+    background: var(--accent-hover);
+}
+
+/* Webhooks List */
+.webhooks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.webhook-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: var(--glass-bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.webhook-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.webhook-platform {
+    font-size: 24px;
+}
+
+.webhook-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.webhook-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.webhook-url {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.webhook-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.webhook-status.enabled {
+    background: rgba(46, 204, 113, 0.15);
+    color: var(--color-success);
+}
+
+.webhook-status.disabled {
+    background: rgba(150, 150, 150, 0.15);
+    color: var(--text-muted);
+}
+
+.webhook-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 16px;
+}
+
+.webhook-actions button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.webhook-actions button svg {
+    width: 18px;
+    height: 18px;
+}
+
+.btn-test {
+    background: rgba(46, 204, 113, 0.15);
+    color: var(--color-success);
+}
+
+.btn-test:hover:not(:disabled) {
+    background: rgba(46, 204, 113, 0.25);
+}
+
+.btn-test:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
