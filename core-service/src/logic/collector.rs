@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! Collector Engine - Thu thập Raw Events (ENHANCED VERSION)
 //!
 //! Thu thập thông tin hệ thống CHI TIẾT cho từng process.

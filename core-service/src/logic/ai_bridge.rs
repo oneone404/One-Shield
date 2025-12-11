@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! AI Bridge - Native ONNX Runtime Integration (Phase IV)
 //!
 //! 🆕 v0.5.0: This module is now a thin wrapper around `model/inference`
@@ -9,33 +11,19 @@
 // Re-export from model module for backward compatibility
 pub use super::model::inference::{
     PredictionResult,
-    ModelMetadata,
-    NormalizationParams,
-    InferenceError as AIBridgeError,
-    DEFAULT_SEQUENCE_LENGTH,
     load_onnx_model,
-    load_onnx_from_bytes,
     is_model_loaded,
-    unload_model,
     get_metadata,
-    get_sequence_length,
     load_normalization,
-    normalize_features,
-    normalize_sequence,
     predict_onnx,
-    predict_fallback,
     predict,
 };
 
 pub use super::model::buffer::{
-    push_to_buffer,
-    get_sequence_from_buffer,
     has_enough_data,
-    buffer_size,
     clear_buffer,
     get_buffer_status,
     push_and_predict,
-    BufferStatus,
 };
 
 pub use super::features::FEATURE_COUNT;
@@ -126,6 +114,7 @@ pub async fn predict_async(sequence: Vec<[f32; FEATURE_COUNT]>) -> Result<Predic
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::logic::model::inference::{predict_fallback, normalize_features};
 
     #[test]
     fn test_fallback_prediction() {

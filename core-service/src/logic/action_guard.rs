@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! Action Guard - Module Hành động Phòng thủ Chủ động
 //!
 //! Can thiệp khi Final Score vượt ngưỡng hoặc theo quyết định từ Policy Engine.
@@ -14,11 +16,11 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 // EDR Pipeline imports (v0.6)
-use super::threat::{self, AnomalyScore, BaselineDiff, ThreatContext, ThreatClass, ClassificationResult};
-use super::policy::{self, Decision, PolicyResult, PolicyConfig};
+use super::threat::{self, AnomalyScore, BaselineDiff, ThreatContext, ClassificationResult};
+use super::policy::{self, Decision, PolicyResult};
 
 // Telemetry imports (v0.6.1)
-use super::telemetry::{self, SecurityEvent, ProcessInfo as TelemetryProcessInfo, AiContext};
+use super::telemetry::{self, SecurityEvent, ProcessInfo as TelemetryProcessInfo};
 
 // ============================================================================
 // CONSTANTS
@@ -331,7 +333,7 @@ pub fn suspend_process(pid: u32) -> Result<ActionResult, ActionError> {
 
     // Windows: Use pssuspend từ Sysinternals hoặc PowerShell
     // Fallback: Dùng debug API (cần admin)
-    let output = Command::new("powershell")
+    let _output = Command::new("powershell")
         .args([
             "-Command",
             &format!(
@@ -695,7 +697,7 @@ pub fn decide_with_pipeline(input: &PipelineInput) -> PipelineOutput {
 }
 
 /// Map policy ActionType to our ActionType
-fn map_policy_action(policy: &PolicyResult, classification: &ClassificationResult) -> Option<ActionType> {
+fn map_policy_action(policy: &PolicyResult, _classification: &ClassificationResult) -> Option<ActionType> {
     use policy::ActionType as PolicyAction;
 
     match policy.decision {

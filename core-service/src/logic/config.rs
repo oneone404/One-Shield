@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::sync::atomic::{AtomicBool, Ordering};
 
 // FREEZE CORE: Safety Configuration (Kill-switches)

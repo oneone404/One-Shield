@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 // Placeholder guard module – will be filled with real guard logic later.
 
 /// Load and decrypt the model into RAM (placeholder)

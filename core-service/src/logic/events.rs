@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! Event Emitter - Global Tauri Event System
 //!
 //! Cho phép emit events từ bất kỳ đâu trong codebase.
