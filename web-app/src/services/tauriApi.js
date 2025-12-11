@@ -481,6 +481,68 @@ export function formatDuration(seconds) {
     return `${h}h ${m}m ${s}s`;
 }
 
+// ============================================================================
+// ADVANCED DETECTION API (Phase 8)
+// ============================================================================
+
+// Initialize advanced detection modules
+export async function initAdvancedDetection() {
+    return invoke('init_advanced_detection');
+}
+
+// Check if advanced detection is ready
+export async function isAdvancedDetectionReady() {
+    return invoke('is_advanced_detection_ready');
+}
+
+// AMSI - Script Scanning
+export async function scanScript(content, contentType = 'powershell') {
+    return invoke('scan_script', { content, contentType });
+}
+
+export async function isScriptMalicious(content, contentType = 'powershell') {
+    return invoke('is_script_malicious', { content, contentType });
+}
+
+export async function getAmsiStats() {
+    return invoke('get_amsi_stats');
+}
+
+// Injection Detection
+export async function analyzeProcessInjection(pid, name, cmdline, parentPid = null, parentName = null) {
+    return invoke('analyze_process_injection', { pid, name, cmdline, parentPid, parentName });
+}
+
+export async function getInjectionAlerts(limit = 50) {
+    return invoke('get_injection_alerts', { limit });
+}
+
+export async function getInjectionStats() {
+    return invoke('get_injection_stats');
+}
+
+// Memory Scanning
+export async function scanMemory(data, sourceName) {
+    return invoke('scan_memory', { data: Array.from(data), sourceName });
+}
+
+export async function scanFileShellcode(path) {
+    return invoke('scan_file_shellcode', { path });
+}
+
+export async function getMemoryStats() {
+    return invoke('get_memory_stats');
+}
+
+// Unified Threat Alerts
+export async function getThreatAlerts(limit = 50) {
+    return invoke('get_threat_alerts', { limit });
+}
+
+export async function getAdvancedDetectionStats() {
+    return invoke('get_advanced_detection_stats');
+}
+
 export default {
     // System
     getSystemStatus,
@@ -555,6 +617,20 @@ export default {
     getExecutiveReport,
     getIncidentSummary,
     getEndpointStats,
+    // Advanced Detection (Phase 8)
+    initAdvancedDetection,
+    isAdvancedDetectionReady,
+    scanScript,
+    isScriptMalicious,
+    getAmsiStats,
+    analyzeProcessInjection,
+    getInjectionAlerts,
+    getInjectionStats,
+    scanMemory,
+    scanFileShellcode,
+    getMemoryStats,
+    getThreatAlerts,
+    getAdvancedDetectionStats,
     // Utility
     formatBytes,
     formatDuration,

@@ -7,6 +7,7 @@ mod logic;
 
 use api::commands;
 use api::enterprise;
+use api::advanced_detection;
 
 // --- Window Control Commands (Manual Implementation) ---
 #[tauri::command]
@@ -49,7 +50,7 @@ fn main() {
             .init();
     }
 
-    log::info!("Starting AI Security App v2.0.0 (Phase VII - Enterprise Features)...");
+    log::info!("Starting AI Security App v2.2.0 (Phase VIII - Advanced Detection)...");
 
     logic::baseline::init();
 
@@ -196,6 +197,21 @@ fn main() {
             enterprise::get_executive_report,
             enterprise::get_incident_summary,
             enterprise::get_endpoint_stats,
+
+            // Advanced Detection Commands (Phase 8)
+            advanced_detection::init_advanced_detection,
+            advanced_detection::is_advanced_detection_ready,
+            advanced_detection::scan_script,
+            advanced_detection::is_script_malicious,
+            advanced_detection::get_amsi_stats,
+            advanced_detection::analyze_process_injection,
+            advanced_detection::get_injection_alerts,
+            advanced_detection::get_injection_stats,
+            advanced_detection::scan_memory,
+            advanced_detection::scan_file_shellcode,
+            advanced_detection::get_memory_stats,
+            advanced_detection::get_threat_alerts,
+            advanced_detection::get_advanced_detection_stats,
         ])
         .run(tauri::generate_context!())
         .expect("Lỗi khi khởi chạy ứng dụng Tauri");

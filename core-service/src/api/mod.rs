@@ -22,6 +22,7 @@
 pub mod commands;
 pub mod engine_status;
 pub mod enterprise;
+pub mod advanced_detection;
 pub mod v1;
 
 // Re-export current version as default
