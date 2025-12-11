@@ -17,6 +17,12 @@ pub mod events {
     pub const ACTION_EXECUTED: &str = "action-guard:executed";
     pub const ANOMALY_DETECTED: &str = "anomaly:detected";
     pub const SYSTEM_STATUS: &str = "system:status";
+
+    // Phase 8: Advanced Detection Events
+    pub const INJECTION_DETECTED: &str = "advanced:injection";
+    pub const MEMORY_ALERT: &str = "advanced:memory";
+    pub const SCRIPT_BLOCKED: &str = "advanced:script";
+    pub const THREAT_ALERT: &str = "advanced:threat";
 }
 
 /// Initialize event system with AppHandle
@@ -61,5 +67,37 @@ pub fn emit_action_executed<S: Serialize + Clone>(payload: S) {
 pub fn emit_anomaly_detected<S: Serialize + Clone>(payload: S) {
     if let Err(e) = emit(events::ANOMALY_DETECTED, payload) {
         log::error!("Failed to emit anomaly: {}", e);
+    }
+}
+
+// ============================================================================
+// PHASE 8: ADVANCED DETECTION EVENTS
+// ============================================================================
+
+/// Emit injection detection event
+pub fn emit_injection_detected<S: Serialize + Clone>(payload: S) {
+    if let Err(e) = emit(events::INJECTION_DETECTED, payload) {
+        log::error!("Failed to emit injection alert: {}", e);
+    }
+}
+
+/// Emit memory scan alert event
+pub fn emit_memory_alert<S: Serialize + Clone>(payload: S) {
+    if let Err(e) = emit(events::MEMORY_ALERT, payload) {
+        log::error!("Failed to emit memory alert: {}", e);
+    }
+}
+
+/// Emit script blocked event
+pub fn emit_script_blocked<S: Serialize + Clone>(payload: S) {
+    if let Err(e) = emit(events::SCRIPT_BLOCKED, payload) {
+        log::error!("Failed to emit script blocked: {}", e);
+    }
+}
+
+/// Emit unified threat alert event
+pub fn emit_threat_alert<S: Serialize + Clone>(payload: S) {
+    if let Err(e) = emit(events::THREAT_ALERT, payload) {
+        log::error!("Failed to emit threat alert: {}", e);
     }
 }

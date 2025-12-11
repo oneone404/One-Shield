@@ -13,6 +13,7 @@ import {
     UsageChart,
     IncidentPanel
 } from '../components'
+import ThreatAlertPanel from '../components/ThreatAlertPanel'
 
 /* ============================================================================
    MAIN DASHBOARD
@@ -118,6 +119,13 @@ export default function Dashboard({ isMonitoring }) {
 
             {/* Incident Monitor (P3.1) */}
             <IncidentPanel />
+
+            {/* Advanced Threat Detection (Phase 8) */}
+            <ThreatAlertPanel
+                maxAlerts={10}
+                refreshInterval={5000}
+                showStats={true}
+            />
 
             {/* Main Stats Grid */}
             <div className="dashboard-grid">
