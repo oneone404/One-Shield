@@ -131,6 +131,9 @@
 | **Memory Shellcode Scanning** | 18 patterns (MSF, Cobalt Strike, etc.) | ✅ Hoàn thành |
 | **Suspicious Spawn Detection** | Office→CMD, Browser→Script patterns | ✅ Hoàn thành |
 | **Encoded Command Detection** | Base64, -EncodedCommand detection | ✅ Hoàn thành |
+| **ThreatAlertPanel UI** | Real-time alerts với MITRE IDs & severity | ✅ Hoàn thành |
+| **13 Backend API Commands** | scan_script, get_injection_alerts, etc. | ✅ Hoàn thành |
+| **Event-driven Updates** | 4 new event types cho real-time alerts | ✅ Hoàn thành |
 
 ---
 
@@ -178,6 +181,8 @@ PS/
 │   │   ├── 📂 api/            # API endpoints cho Frontend
 │   │   │   ├── commands.rs    # Tauri commands (IPC)
 │   │   │   ├── engine_status.rs # AI Engine status structs
+│   │   │   ├── enterprise.rs  # Enterprise API (Phase 7)
+│   │   │   ├── advanced_detection.rs # 🆕 Phase 8 API (13 commands)
 │   │   │   └── mod.rs
 │   │   │
 │   │   ├── 📂 logic/          # ⭐ CORE LOGIC (Não bộ)
@@ -245,6 +250,7 @@ PS/
 │   │   │   ├── Sidebar.jsx    # Navigation sidebar
 │   │   │   ├── AiEngineStatus.jsx # AI status panel
 │   │   │   ├── IncidentPanel.jsx  # Security incidents
+│   │   │   ├── ThreatAlertPanel.jsx # 🆕 Advanced Detection alerts (Phase 8)
 │   │   │   ├── ApprovalModal.jsx  # Action approval modal
 │   │   │   ├── UsageChart.jsx # Performance chart
 │   │   │   ├── 📂 cards/      # Stat cards (CPU, RAM, GPU...)
