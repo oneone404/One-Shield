@@ -162,6 +162,8 @@
 | **Docker Compose** | PostgreSQL + Adminer UI | ✅ Hoàn thành |
 | **6 New API Commands** | get_cloud_sync_status, queue_incident_for_sync, etc. | ✅ Hoàn thành |
 | **20+ Cloud API Endpoints** | /auth, /agent, /endpoints, /incidents, /reports | ✅ Hoàn thành |
+| **Cloud Status UI** | Real-time indicator trong Header (Connected/Disconnected) | ✅ Hoàn thành |
+| **Heartbeat Counter** | Hiển thị số heartbeats đã gửi | ✅ Hoàn thành |
 
 ---
 
