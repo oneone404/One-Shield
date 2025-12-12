@@ -80,6 +80,25 @@ fn main() {
             // Start Analysis Engine Loop (Bridges Collector -> Incident)
             logic::analysis_loop::start();
 
+            // Start Cloud Sync Loop (Phase 10)
+            logic::cloud_sync::init();
+            let sync_config = logic::cloud_sync::SyncConfig::default();
+            log::info!("🌐 Cloud Sync: Starting background sync...");
+            log::info!("   Server: {}", sync_config.server_url);
+            log::info!("   Heartbeat: {}s", sync_config.heartbeat_interval_secs);
+
+            // Spawn cloud sync in background task
+            std::thread::spawn(move || {
+                let rt = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .expect("Failed to create tokio runtime for cloud sync");
+
+                rt.block_on(async {
+                    logic::cloud_sync::start_sync_loop(sync_config).await;
+                });
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

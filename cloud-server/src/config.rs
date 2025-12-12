@@ -45,7 +45,7 @@ impl Config {
                 .unwrap_or(24),
 
             agent_secret: env::var("AGENT_SECRET")
-                .unwrap_or_else(|_| "agent-registration-secret-change-in-production".to_string()),
+                .unwrap_or_else(|_| "dev-agent-secret-change-in-production-789012".to_string()),
 
             environment: env::var("ENVIRONMENT")
                 .unwrap_or_else(|_| "development".to_string()),

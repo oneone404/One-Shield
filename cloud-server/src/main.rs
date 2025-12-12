@@ -98,11 +98,12 @@ fn create_router(state: AppState) -> Router {
     let public_routes = Router::new()
         .route("/health", get(handlers::health::check))
         .route("/api/v1/auth/login", post(handlers::auth::login))
-        .route("/api/v1/auth/register", post(handlers::auth::register));
+        .route("/api/v1/auth/register", post(handlers::auth::register))
+        // Agent registration is public (uses registration_key instead of token)
+        .route("/api/v1/agent/register", post(handlers::agent::register));
 
-    // Agent routes (agent token auth)
+    // Agent routes (agent token auth) - requires registered agent token
     let agent_routes = Router::new()
-        .route("/api/v1/agent/register", post(handlers::agent::register))
         .route("/api/v1/agent/heartbeat", post(handlers::agent::heartbeat))
         .route("/api/v1/agent/sync/baseline", post(handlers::agent::sync_baseline))
         .route("/api/v1/agent/sync/incidents", post(handlers::agent::sync_incidents))
