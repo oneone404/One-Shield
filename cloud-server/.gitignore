@@ -1,0 +1,24 @@
+# Build
+/target/
+
+# Cargo.lock for binaries (keep for reproducibility)
+# Cargo.lock
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
