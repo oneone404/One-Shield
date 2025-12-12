@@ -165,6 +165,17 @@
 | **Cloud Status UI** | Real-time indicator trong Header (Connected/Disconnected) | ✅ Hoàn thành |
 | **Heartbeat Counter** | Hiển thị số heartbeats đã gửi | ✅ Hoàn thành |
 | **Incident Auto-Sync** | Tự động sync incidents lên cloud khi phát hiện | ✅ Hoàn thành |
+| **E2E Test** | Full flow verified: Registration → Heartbeat → Incident Sync | ✅ Verified 2025-12-12 |
+
+### 🏆 Enterprise Agent Identity (Phase 11 NEW!)
+
+| Feature | Mô tả | Status |
+|---------|-------|--------|
+| **Hardware-bound HWID** | CPU ID + BIOS Serial + Machine GUID + Machine SID | ✅ Hoàn thành |
+| **Identity Persistence** | Agent ID lưu vào file, không tạo mới khi restart | ✅ Hoàn thành |
+| **HMAC Signing** | Chống sửa đổi file identity (anti-tampering) | ✅ Hoàn thành |
+| **HWID Verification** | Chống copy file sang máy khác (anti-copy) | ✅ Hoàn thành |
+| **Cloud Management Dashboard** | React Web Console để quản lý agents từ xa | ✅ Hoàn thành |
 
 ---
 

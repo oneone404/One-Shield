@@ -42,6 +42,9 @@ pub struct RegisterAgentRequest {
     pub os_version: String,
     pub agent_version: String,
     pub registration_key: String,
+    /// Hardware ID for machine-bound identity (optional for backwards compat)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hwid: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -153,6 +156,11 @@ impl CloudClient {
         self.org_id = Some(org_id);
     }
 
+    /// Set token only (for identity loading)
+    pub fn set_token(&mut self, token: String) {
+        self.agent_token = Some(token);
+    }
+
     /// Check server health
     pub async fn health_check(&self) -> Result<HealthResponse, CloudError> {
         let url = format!("{}/health", self.config.server_url);
@@ -171,8 +179,18 @@ impl CloudClient {
         }
     }
 
-    /// Register agent with cloud server
+    /// Register agent with cloud server (legacy, no HWID)
     pub async fn register(&mut self) -> Result<RegisterAgentResponse, CloudError> {
+        self.register_with_hwid_opt(None).await
+    }
+
+    /// Register agent with cloud server using HWID (Enterprise)
+    pub async fn register_with_hwid(&mut self, hwid: &str) -> Result<RegisterAgentResponse, CloudError> {
+        self.register_with_hwid_opt(Some(hwid.to_string())).await
+    }
+
+    /// Internal registration with optional HWID
+    async fn register_with_hwid_opt(&mut self, hwid: Option<String>) -> Result<RegisterAgentResponse, CloudError> {
         let url = format!("{}/api/v1/agent/register", self.config.server_url);
 
         // Get system info
@@ -186,6 +204,7 @@ impl CloudClient {
             os_version: get_os_version(),
             agent_version: env!("CARGO_PKG_VERSION").to_string(),
             registration_key: self.config.registration_key.clone(),
+            hwid,
         };
 
         log::info!("Registering agent with cloud server: {}", self.config.server_url);

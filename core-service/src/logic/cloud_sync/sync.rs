@@ -130,23 +130,72 @@ pub async fn start_sync_loop(config: SyncConfig) {
         }
     }
 
-    // Register agent
-    log::info!("Registering agent with cloud server...");
-    match client.write().register().await {
-        Ok(result) => {
-            log::info!("✅ Agent registered: {}", result.agent_id);
+    // ========== Enterprise Identity Integration ==========
+    use crate::logic::identity::{self, IdentityState, get_identity_manager};
+
+    // Initialize identity manager
+    let identity_state = match identity::init() {
+        Ok(state) => state,
+        Err(e) => {
+            log::error!("Failed to initialize identity: {}", e);
+            IdentityState::NeedsRegistration { hwid: identity::get_hwid() }
+        }
+    };
+
+    match identity_state {
+        IdentityState::Loaded(existing) => {
+            // Use existing identity
+            log::info!("Using existing identity: agent={}", existing.agent_id);
+
+            // Set credentials on client
+            client.write().set_token(existing.agent_token.clone());
+
             let mut status = super::get_status();
             status.is_registered = true;
-            status.agent_id = Some(result.agent_id);
-            status.org_id = Some(result.org_id);
+            status.agent_id = Some(existing.agent_id);
+            status.org_id = Some(existing.org_id);
             set_status(status);
+
+            // TODO: Verify with cloud in future (anti-rollback)
+            log::info!("✅ Identity loaded from storage (HWID-bound)");
         }
-        Err(e) => {
-            log::error!("Failed to register agent: {}", e);
-            let mut status = super::get_status();
-            status.errors.push(format!("Registration failed: {}", e));
-            set_status(status);
-            // Don't return, keep trying in the loop
+        IdentityState::NeedsRegistration { hwid } | IdentityState::Invalid { hwid, .. } => {
+            // Register new agent with HWID
+            log::info!("Registering agent with cloud server (HWID: {}...)", &hwid[..8]);
+
+            match client.write().register_with_hwid(&hwid).await {
+                Ok(result) => {
+                    log::info!("✅ Agent registered: {}", result.agent_id);
+
+                    // Save identity to storage
+                    {
+                        let mut identity_mgr = get_identity_manager().write();
+                        if let Err(e) = identity_mgr.save_identity(
+                            result.agent_id,
+                            result.token.clone(),
+                            result.org_id,
+                            &config.server_url,
+                        ) {
+                            log::error!("Failed to save identity: {}", e);
+                        } else {
+                            log::info!("Identity saved to secure storage");
+                        }
+                    }
+
+                    let mut status = super::get_status();
+                    status.is_registered = true;
+                    status.agent_id = Some(result.agent_id);
+                    status.org_id = Some(result.org_id);
+                    set_status(status);
+                }
+                Err(e) => {
+                    log::error!("Failed to register agent: {}", e);
+                    let mut status = super::get_status();
+                    status.errors.push(format!("Registration failed: {}", e));
+                    set_status(status);
+                    // Don't return, keep trying in the loop
+                }
+            }
         }
     }
 

@@ -61,9 +61,9 @@
 ```
 
 **Tasks**:
-- [ ] 11.1.1 Setup React + Vite project
-- [ ] 11.1.2 Create Login page với JWT auth
-- [ ] 11.1.3 Create Dashboard với stat cards
+- [x] 11.1.1 Setup React + Vite project ✅ (2025-12-12)
+- [x] 11.1.2 Create Login page với JWT auth ✅ (2025-12-12)
+- [x] 11.1.3 Create Dashboard với stat cards ✅ (2025-12-12)
 - [ ] 11.1.4 Create Agents list (show online/offline)
 - [ ] 11.1.5 Create Agent detail view
 - [ ] 11.1.6 Create Incidents list
@@ -195,7 +195,7 @@
 - [x] Heartbeat sync working
 - [x] Incident auto-sync working
 - [x] Cloud Status UI working
-- [ ] Test full flow end-to-end
+- [x] Test full flow end-to-end (Verified 2025-12-12)
 
 ---
 

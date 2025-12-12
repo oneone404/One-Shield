@@ -87,3 +87,5 @@ pub mod advanced_detection;
 // Cloud Sync (Phase 10)
 pub mod cloud_sync;
 
+// Enterprise Agent Identity (Phase 11)
+pub mod identity;

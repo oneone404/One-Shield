@@ -62,16 +62,18 @@ hostname = "0.4"
 # HTTP Client for Cloud Sync (Phase 10)
 reqwest = { version = "0.12", features = ["json"] }
 
-# Windows APIs for Advanced Detection (Phase 8) - Optional, for native AMSI
-# Uncomment when implementing native Windows AMSI (requires admin rights)
-# [target.'cfg(windows)'.dependencies]
-# windows = { version = "0.58", features = [
-#     "Win32_System_Antimalware",      # AMSI
-#     "Win32_System_Threading",         # Process/Thread APIs
-#     "Win32_System_Memory",            # Memory APIs
-#     "Win32_System_Diagnostics_Debug", # Debug APIs
-#     "Win32_Foundation",               # Base types
-# ] }
+# Enterprise Agent Identity (Phase 11)
+hmac = "0.12"
+base64 = "0.22"
+
+# Windows APIs for Advanced Detection & Identity
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_System_SystemInformation",   # HWID (GetSystemInfo, ComputerNameEx)
+    "Win32_Security_Cryptography",      # DPAPI (CryptProtectData)
+    "Win32_Foundation",                 # Base types
+    "Win32_System_Registry",            # Registry access for BIOS/CPU info
+] }
 
 [build-dependencies]
 tauri-build = { version = "2.5", features = [] }
