@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS incidents (
     severity VARCHAR(20) NOT NULL,
     title VARCHAR(500) NOT NULL,
     description TEXT,
-    mitre_techniques JSONB,
+    mitre_techniques JSONB, 
     threat_class VARCHAR(50),
     confidence REAL,
     status VARCHAR(20) DEFAULT 'open',

@@ -1,4 +1,4 @@
-//! AI Security Core - Main Entry Point (PHASE VII - Enterprise)
+//! AI Security Core - Main Entry Point (PHASE X - Cloud Backend)
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -8,6 +8,7 @@ mod logic;
 use api::commands;
 use api::enterprise;
 use api::advanced_detection;
+use api::cloud_sync;
 
 // --- Window Control Commands (Manual Implementation) ---
 #[tauri::command]
@@ -223,6 +224,14 @@ fn main() {
             advanced_detection::analyze_api_imports,
             advanced_detection::get_iat_stats,
             advanced_detection::clear_iat_cache,
+
+            // Cloud Sync Commands (Phase 10)
+            cloud_sync::get_cloud_sync_status,
+            cloud_sync::is_cloud_connected,
+            cloud_sync::get_cloud_sync_config,
+            cloud_sync::update_cloud_sync_config,
+            cloud_sync::queue_incident_for_sync,
+            cloud_sync::get_pending_incidents_count,
         ])
         .run(tauri::generate_context!())
         .expect("Lỗi khi khởi chạy ứng dụng Tauri");

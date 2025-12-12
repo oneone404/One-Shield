@@ -59,6 +59,9 @@ regex = "1.10"
 ureq = "2.9"
 hostname = "0.4"
 
+# HTTP Client for Cloud Sync (Phase 10)
+reqwest = { version = "0.12", features = ["json"] }
+
 # Windows APIs for Advanced Detection (Phase 8) - Optional, for native AMSI
 # Uncomment when implementing native Windows AMSI (requires admin rights)
 # [target.'cfg(windows)'.dependencies]

@@ -84,4 +84,6 @@ pub mod enterprise;
 // Advanced Detection (Phase 8)
 pub mod advanced_detection;
 
+// Cloud Sync (Phase 10)
+pub mod cloud_sync;
 
