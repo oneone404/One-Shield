@@ -105,6 +105,25 @@
 
 ---
 
+### 11.6 🏆 Enterprise Agent Identity (NEW!)
+
+**Mục tiêu**: Agent ID cố định theo máy, không tạo mới khi restart (Chuẩn CrowdStrike/SentinelOne)
+
+**Features**:
+- Hardware-bound Identity (HWID)
+- Identity Persistence với HMAC signing
+- Anti-tampering + Anti-copy protection
+
+**Tasks**:
+- [x] 11.6.1 Create HWID module (CPU ID, BIOS Serial, Machine GUID) ✅ (2025-12-12)
+- [x] 11.6.2 Create Identity Storage với HMAC-SHA256 signing ✅ (2025-12-12)
+- [x] 11.6.3 Integrate Identity Manager into Cloud Sync ✅ (2025-12-12)
+- [x] 11.6.4 Test: Agent restart uses same ID ✅ (2025-12-12)
+- [ ] 11.6.5 Add Cloud verify_identity endpoint (anti-rollback)
+- [ ] 11.6.6 Add DPAPI encryption (optional Windows-native)
+
+---
+
 ### 11.4 Compliance Reports
 
 **ISO 27001 Controls to cover**:

@@ -183,35 +183,61 @@
 ## 🏗️ Kiến Trúc Hệ Thống
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        ONE-SHIELD v2.5                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐ │
-│  │  COLLECTOR  │───▶│  ANALYSIS   │───▶│  INCIDENT MANAGER   │ │
-│  │  (2s loop)  │    │    LOOP     │    │  (Alert & Explain)  │ │
-│  └─────────────┘    └──────┬──────┘    └─────────────────────┘ │
-│         │                  │                      │             │
-│         ▼                  ▼                      ▼             │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐ │
-│  │   SYSINFO   │    │  BASELINE   │    │     DASHBOARD       │ │
-│  │  (metrics)  │    │  + AI/ONNX  │    │  (React + Tauri)    │ │
-│  └─────────────┘    └─────────────┘    └─────────────────────┘ │
-│                            │                                    │
-│                            ▼                                    │
-│                     ┌─────────────┐                             │
-│                     │   DATASET   │                             │
-│                     │  (.jsonl)   │                             │
-│                     └─────────────┘                             │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            ONE-SHIELD v2.5                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    🖥️ TAURI APP (Agent)                              │   │
+│  │  ┌───────────┐   ┌────────────┐   ┌──────────────────────────────┐ │   │
+│  │  │ COLLECTOR │──▶│  ANALYSIS  │──▶│    INCIDENT MANAGER          │ │   │
+│  │  │  (2s loop)│   │    LOOP    │   │   (Alert + Cloud Sync)       │ │   │
+│  │  └───────────┘   └─────┬──────┘   └──────────────────────────────┘ │   │
+│  │        │               │                        │                    │   │
+│  │        ▼               ▼                        ▼                    │   │
+│  │  ┌───────────┐   ┌────────────┐   ┌──────────────────────────────┐ │   │
+│  │  │  SYSINFO  │   │  BASELINE  │   │       DASHBOARD (React)       │ │   │
+│  │  │ (metrics) │   │ + AI/ONNX  │   │                               │ │   │
+│  │  └───────────┘   └────────────┘   └──────────────────────────────┘ │   │
+│  │        │               │                                            │   │
+│  │        ▼               ▼                                            │   │
+│  │  ┌───────────────────────────────┐   ┌──────────────────────────┐  │   │
+│  │  │   🆔 IDENTITY MANAGER          │   │     CLOUD SYNC          │  │   │
+│  │  │   (HWID + HMAC + Persistence) │──▶│  (Heartbeat + Incidents) │  │   │
+│  │  └───────────────────────────────┘   └────────────┬─────────────┘  │   │
+│  └────────────────────────────────────────────────────┼────────────────┘   │
+│                                                       │                     │
+│                                                       ▼                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    ☁️ CLOUD SERVER (Axum)                            │   │
+│  │  ┌───────────┐   ┌────────────┐   ┌──────────────────────────────┐ │   │
+│  │  │   AUTH    │   │  AGENTS    │   │       INCIDENTS              │ │   │
+│  │  │  (JWT)    │   │ (Register, │   │   (Collect, Analyze)         │ │   │
+│  │  │           │   │ Heartbeat) │   │                              │ │   │
+│  │  └───────────┘   └────────────┘   └──────────────────────────────┘ │   │
+│  │        │               │                        │                    │   │
+│  │        ▼               ▼                        ▼                    │   │
+│  │  ┌─────────────────────────────────────────────────────────────┐   │   │
+│  │  │                 📊 POSTGRESQL DATABASE                       │   │   │
+│  │  │   Users │ Organizations │ Endpoints │ Incidents │ Heartbeats │   │   │
+│  │  └─────────────────────────────────────────────────────────────┘   │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+│                                                       │                     │
+│                                                       ▼                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                 🌐 CLOUD DASHBOARD (React)                           │   │
+│  │   Login │ Dashboard │ Agents List │ Incidents │ Reports │ Settings  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow (Luồng dữ liệu)
 1. **Collector** thu thập metrics hệ thống mỗi 2 giây
 2. **Analysis Loop** xử lý dữ liệu qua Baseline + AI
-3. Nếu phát hiện anomaly → Tạo **Incident** + gửi lên Dashboard
-4. Mọi sample đều được ghi vào **Dataset** để train sau
+3. Nếu phát hiện anomaly → Tạo **Incident** + sync lên **Cloud Server**
+4. **Identity Manager** quản lý agent ID với HWID (không tạo agent mới khi restart)
+5. **Cloud Dashboard** hiển thị tất cả agents và incidents từ tất cả endpoints
 
 ---
 
@@ -343,6 +369,34 @@ PS/
 │   ├── convert_to_onnx.py     # Convert to ONNX format
 │   └── requirements.txt
 │
+├── 📂 cloud-server/           # ☁️ Cloud Server (Axum) - Phase 10/11
+│   ├── 📂 src/
+│   │   ├── 📂 handlers/       # API Handlers
+│   │   │   ├── auth.rs        # JWT Auth (login, register)
+│   │   │   ├── agent.rs       # Agent registration, heartbeat
+│   │   │   ├── endpoints.rs   # Endpoints CRUD
+│   │   │   ├── incidents.rs   # Incident management
+│   │   │   └── mod.rs
+│   │   ├── config.rs          # Server configuration
+│   │   ├── db.rs              # PostgreSQL connection pool
+│   │   ├── models.rs          # DB models (User, Endpoint, Incident)
+│   │   └── main.rs            # Entry point + routes
+│   ├── 📂 dashboard/          # 🌐 Cloud Dashboard (React)
+│   │   ├── 📂 src/
+│   │   │   ├── 📂 components/ # Layout components
+│   │   │   │   ├── Header.jsx
+│   │   │   │   └── Sidebar.jsx
+│   │   │   ├── 📂 pages/      # Dashboard pages
+│   │   │   │   ├── Login.jsx
+│   │   │   │   └── Dashboard.jsx
+│   │   │   ├── 📂 services/   # API services
+│   │   │   │   └── api.js     # Cloud API client
+│   │   │   └── 📂 styles/     # Glassmorphism CSS
+│   │   └── package.json
+│   ├── init.sql               # Database schema
+│   ├── docker-compose.yml     # PostgreSQL + Adminer
+│   └── Cargo.toml
+│
 ├── 📂 models/                 # AI Model Files
 │   ├── core.sys               # Encrypted Global Model (ONNX)
 │   └── profile.sys            # Encrypted Profile Model
@@ -354,9 +408,19 @@ PS/
 │
 ├── 📄 README.md               # This file
 ├── 📄 CHANGELOG-v1.0.md       # Version changelog
+├── 📄 PHASE_11_TASKS.md       # Phase 11 task list
 ├── 📄 DEMO_SCRIPT.md          # 5-minute demo script
 ├── 📄 FAST_DEMO.md            # 1-minute quick demo
 └── 📄 package.json            # Root package.json
+```
+
+### 🆔 Identity Module (`core-service/src/logic/identity/`)
+
+```
+📂 identity/
+├── mod.rs        # Identity Manager (init, get_agent_id, get_hwid)
+├── hwid.rs       # 🏆 Hardware ID generation (CPU, BIOS, SID, Machine GUID)
+└── storage.rs    # Secure storage (HMAC-SHA256 signing, HWID verification)
 ```
 
 ---
@@ -445,6 +509,78 @@ pub const FEATURE_LAYOUT: &[&str] = &[
 - `getSystemStatus()`, `getAiStatus()`.
 - `startCollector()`, `stopCollector()`.
 - `getIncidents()`, `getIncidentDetail()`.
+
+### ☁️ Cloud Server (Rust Axum)
+
+#### `handlers/auth.rs`
+**Mục đích**: JWT Authentication.
+- Login với email/password.
+- Register với organization_name.
+- Token generation với HS256 signing.
+
+#### `handlers/agent.rs`
+**Mục đích**: Agent Management.
+- Register agent với HWID.
+- Heartbeat nhận CPU/Memory metrics.
+- Command distribution (UpdatePolicy, CollectDiagnostics).
+
+#### `handlers/endpoints.rs`
+**Mục đích**: Endpoints CRUD.
+- List all endpoints với trạng thái online/offline.
+- Filter theo organization.
+
+#### `handlers/incidents.rs`
+**Mục đích**: Incident Management.
+- Sync incidents từ agents.
+- List với pagination và filters.
+
+### 🆔 Identity Module (Enterprise)
+
+#### `logic/identity/hwid.rs`
+**Mục đích**: Hardware-bound Identity.
+- Thu thập CPU ID, BIOS Serial, Machine GUID, Machine SID.
+- Hash với SHA256 tạo HWID cố định.
+- Chống spoof: HWID không thể fake bởi attacker.
+
+#### `logic/identity/storage.rs`
+**Mục đích**: Secure Identity Storage.
+- Lưu `agent_identity.json` tại AppData.
+- HMAC-SHA256 signing chống tampering.
+- HWID verification chống copy file.
+
+#### `logic/identity/mod.rs`
+**Mục đích**: Identity Manager.
+- Init: Load hoặc register identity.
+- Get agent_id, get_hwid.
+- Clear identity (force re-register).
+
+### 🌐 Cloud Dashboard (React Web)
+
+#### `pages/Login.jsx`
+**Mục đích**: Authentication Page.
+- Login và Register forms.
+- JWT token storage.
+- Redirect to Dashboard.
+
+#### `pages/Dashboard.jsx`
+**Mục đích**: Overview Page.
+- 4 Stat Cards (Agents, Online, Incidents, Open Issues).
+- Recent Agents list.
+- Recent Incidents table.
+- Security Score circle.
+
+#### `components/Layout/Sidebar.jsx`
+**Mục đích**: Navigation Sidebar.
+- Logo + App name.
+- Navigation items (Dashboard, Agents, Incidents, etc).
+- Active state indicator.
+
+#### `services/api.js`
+**Mục đích**: Cloud API Client.
+- Auth (login, register, logout).
+- Endpoints CRUD.
+- Incidents CRUD.
+- JWT token management.
 
 ---
 
@@ -611,38 +747,59 @@ Expected: Dashboard hiện Incident với tags `PROCESSSPIKE`, `HIGHCHURNRATE`.
 | **AMSI Script Scanning** | Heuristic patterns for malicious scripts | ✅ Done |
 | **DLL Injection Detection** | Detect RemoteThread, APC, Hollowing | ✅ Done |
 | **Memory Scanning** | Scan for shellcode patterns (MSF, CS) | ✅ Done |
-| **Keylogger API Hooking** | Detect GetAsyncKeyState abuse | � v2.3 |
-| **ETW Tracing** | Event Tracing for Windows | � v2.3 |
+| **Keylogger API Hooking** | Detect GetAsyncKeyState abuse | 🟡 v2.3 |
+| **ETW Tracing** | Event Tracing for Windows | 🟡 v2.3 |
 
 ---
 
-### 📅 Phase 9: Cloud & Sync (v2.3)
+### 📅 Phase 9: Cloud & Sync (v2.3) - RENUMBERED to Phase 10
+
+---
+
+### 📅 Phase 10: Cloud Server & Management (v2.4) ✅ COMPLETE
 > *Mục tiêu: Cloud-based management*
 
-| Tính năng | Mô tả | Effort |
+| Tính năng | Mô tả | Status |
 |-----------|-------|--------|
-| **Cloud Backend** | Central server (PostgreSQL + API) | 🔴 High |
-| **Agent-Server Protocol** | Secure communication | 🔴 High |
-| **Baseline Sync** | Share baselines across endpoints | 🟡 Medium |
-| **Model Updates** | Push model updates from cloud | 🟡 Medium |
-| **Multi-Tenant** | Support multiple organizations | 🔴 High |
+| **Cloud Backend** | Axum server + PostgreSQL + Docker | ✅ Done |
+| **Agent Registration** | Auto-register with HWID | ✅ Done |
+| **Heartbeat Sync** | Agent sends metrics every 30s | ✅ Done |
+| **JWT Authentication** | User login/register | ✅ Done |
+| **Multi-Tenant** | Organizations, Users, Endpoints | ✅ Done |
+| **Incident Sync** | Auto-sync incidents to cloud | ✅ Done |
+| **20+ API Endpoints** | Full REST API | ✅ Done |
 
 ---
 
-### 📅 Phase 10: Compliance & Reporting (v3.0)
+### 📅 Phase 11: Enterprise Agent Identity & Dashboard (v2.5) ✅ COMPLETE
+> *Mục tiêu: Chuẩn EDR Enterprise (CrowdStrike, SentinelOne)*
+
+| Tính năng | Mô tả | Status |
+|-----------|-------|--------|
+| **Hardware-bound HWID** | CPU ID + BIOS Serial + Machine GUID | ✅ Done |
+| **Identity Persistence** | Agent ID lưu file, không tạo mới khi restart | ✅ Done |
+| **HMAC Signing** | Chống sửa đổi file identity (anti-tampering) | ✅ Done |
+| **HWID Verification** | Chống copy file sang máy khác (anti-copy) | ✅ Done |
+| **Cloud Dashboard** | React Web Console (Glassmorphism UI) | ✅ Done |
+| **JWT Auth Dashboard** | Login/Register for admins | ✅ Done |
+| **Real-time Stats** | Agents, Incidents, Security Score | ✅ Done |
+
+---
+
+### 📅 Phase 12: Compliance & Reporting (v3.0)
 > *Mục tiêu: Enterprise compliance*
 
 | Tính năng | Mô tả | Effort |
 |-----------|-------|--------|
 | **ISO 27001 Reports** | Compliance reporting | 🟡 Medium |
 | **SOC2 Audit Trail** | Complete audit logging | 🟡 Medium |
-| **GDPR Data Handling** | Data privacy controls | � Medium |
-| **Custom Report Builder** | Build custom reports | �🟢 Low |
+| **GDPR Data Handling** | Data privacy controls | 🟡 Medium |
+| **Custom Report Builder** | Build custom reports | 🟢 Low |
 | **Scheduled Reports** | Auto-generate & email | 🟢 Low |
 
 ---
 
-### 📊 V2.1 Completion Summary
+### 📊 V2.5 Completion Summary
 
 | Phase | Version | Status | LOC |
 |-------|---------|--------|-----|
@@ -653,7 +810,10 @@ Expected: Dashboard hiện Incident với tags `PROCESSSPIKE`, `HIGHCHURNRATE`.
 | Phase 5: Response & Automation | v1.5 | ✅ Complete | ~1,785 |
 | Phase 6: Enterprise Features | v2.0 | ✅ Complete | ~2,500 |
 | Phase 7: UI Integration | v2.1 | ✅ Complete | ~1,500 |
-| **Total** | **v2.1** | **✅ 100%** | **~12,535** |
+| Phase 8: Advanced Detection | v2.2 | ✅ Complete | ~1,800 |
+| Phase 10: Cloud Server | v2.4 | ✅ Complete | ~3,500 |
+| Phase 11: Enterprise Identity | v2.5 | ✅ Complete | ~1,500 |
+| **Total** | **v2.5** | **✅ 100%** | **~19,335** |
 
 ---
 
@@ -670,5 +830,5 @@ MIT License - See [LICENSE](./LICENSE) file.
 ---
 
 <p align="center">
-  <b>One-Shield v2.1.0</b> - Enterprise-Grade EDR Built with ❤️ and AI
+  <b>One-Shield v2.5.0</b> - Enterprise-Grade EDR Built with ❤️ and AI
 </p>
