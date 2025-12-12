@@ -123,7 +123,7 @@
 | **Executive Reports** | Security score, threat overview | ✅ Hoàn thành |
 | **REST API** | 20+ endpoints với auth | ✅ Hoàn thành |
 
-### 🔬 Advanced Detection v2.2 (NEW!)
+### 🔬 Advanced Detection v2.2
 | Tính năng | Mô tả | Trạng thái |
 |-----------|-------|------------|
 | **AMSI Script Scanning** | 70+ malicious patterns (Mimikatz, Empire, etc.) | ✅ Hoàn thành |
@@ -136,13 +136,28 @@
 | **Event-driven Updates** | 4 new event types cho real-time alerts | ✅ Hoàn thành |
 | **Analysis Loop Integration** | Auto-check injection patterns mỗi 10s | ✅ Hoàn thành |
 
+### ⌨️ Advanced Detection v2.3 (Phase 9 - NEW!)
+| Tính năng | Mô tả | Trạng thái |
+|-----------|-------|------------|
+| **Keylogger Detection** | API tracking (GetAsyncKeyState, SetWindowsHookEx) | ✅ Hoàn thành |
+| **IAT Analysis** | 11 suspicious API combo patterns | ✅ Hoàn thành |
+| **Process Injection (Native)** | Nt* API detection (T1055) | ✅ Hoàn thành |
+| **APC Injection** | QueueUserAPC detection (T1055.004) | ✅ Hoàn thành |
+| **Thread Hijacking** | Context manipulation detection (T1055.003) | ✅ Hoàn thành |
+| **Process Hollowing** | NtUnmapViewOfSection detection (T1055.012) | ✅ Hoàn thành |
+| **Credential Access** | LSA/LSASS API detection (T1003) | ✅ Hoàn thành |
+| **7 New API Commands** | get_keylogger_alerts, analyze_file_imports, etc. | ✅ Hoàn thành |
+| **ThreatAlertPanel v2** | 6 stat cards (Script, Inject, Shell, Keylog, IAT, Critical) | ✅ Hoàn thành |
+| **Analysis Loop v2.3** | Keylogger check mỗi 30s | ✅ Hoàn thành |
+
 ---
+
 
 ## 🏗️ Kiến Trúc Hệ Thống
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        ONE-SHIELD v2.2                          │
+│                        ONE-SHIELD v2.3                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐ │
