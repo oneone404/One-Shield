@@ -1,4 +1,5 @@
 import { Search, Bell, Play, Square, Sun, Moon } from 'lucide-react'
+import CloudStatus from './CloudStatus'
 
 export default function Header({
     title = 'Dashboard',
@@ -18,6 +19,9 @@ export default function Header({
 
             {/* Right - All Controls */}
             <div className="header-right">
+                {/* Cloud Status Indicator */}
+                <CloudStatus compact={true} />
+
                 {/* Search */}
                 <div className="header-search">
                     <Search size={16} className="search-icon" />

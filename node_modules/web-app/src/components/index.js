@@ -8,3 +8,4 @@ export { default as UsageChart } from './UsageChart'
 export { default as AiEngineStatus } from './AiEngineStatus';
 export { IncidentPanel } from './IncidentPanel';
 export { default as SecurityLogs } from './SecurityLogs'
+export { default as CloudStatus } from './CloudStatus'

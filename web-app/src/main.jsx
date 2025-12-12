@@ -15,6 +15,7 @@ import './styles/components/approval-modal.css'
 import './styles/components/chart.css'
 import './styles/components/titlebar.css'
 import './styles/components/security-logs.css'
+import './styles/CloudStatus.css'
 
 // Page Styles
 import './styles/pages/dashboard.css'
