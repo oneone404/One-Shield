@@ -1,15 +1,17 @@
-//! Advanced Detection API - Tauri Commands for Phase 8
+//! Advanced Detection API - Tauri Commands for Phase 8 + 9
 //!
-//! Expose AMSI, Injection, and Memory scanning to frontend.
+//! Expose AMSI, Injection, Memory, Keylogger, and IAT analysis to frontend.
 
 use tauri::command;
 use serde::{Deserialize, Serialize};
 
 use crate::logic::advanced_detection::{
-    amsi, injection, memory,
+    amsi, injection, memory, keylogger, iat_analysis,
     ScanResult, ThreatLevel, AmsiStats,
     InjectionAlert, InjectionType, InjectionStats,
     MemoryScanResult, ShellcodeType, MemoryScanStats,
+    KeyloggerAlert, KeyloggerStats,
+    IatAnalysisResult, IatAlert, IatStats,
 };
 
 // ============================================================================
@@ -43,8 +45,13 @@ pub struct AdvancedDetectionStats {
     pub injection_alerts: u64,
     pub memory_scans: u64,
     pub memory_detections: u64,
+    pub keylogger_checks: u64,
+    pub keylogger_alerts: u64,
+    pub iat_scans: u64,
+    pub iat_suspicious: u64,
     pub total_critical: u64,
 }
+
 
 // ============================================================================
 // INITIALIZATION
@@ -337,6 +344,8 @@ pub fn get_advanced_detection_stats() -> AdvancedDetectionStats {
     let amsi = amsi::get_stats();
     let inj = injection::get_stats();
     let mem = memory::get_stats();
+    let key = keylogger::get_stats();
+    let iat = iat_analysis::get_stats();
 
     AdvancedDetectionStats {
         amsi_scans: amsi.total_scans,
@@ -345,6 +354,150 @@ pub fn get_advanced_detection_stats() -> AdvancedDetectionStats {
         injection_alerts: inj.alerts_count,
         memory_scans: mem.total_scans,
         memory_detections: mem.detections,
-        total_critical: inj.critical_count + mem.critical_detections,
+        keylogger_checks: key.total_checks,
+        keylogger_alerts: key.alerts_count,
+        iat_scans: iat.total_scans,
+        iat_suspicious: iat.suspicious_count,
+        total_critical: inj.critical_count + mem.critical_detections + key.critical_count + iat.critical_count,
     }
+}
+
+// ============================================================================
+// KEYLOGGER COMMANDS (Phase 9)
+// ============================================================================
+
+/// Keylogger alert DTO for frontend
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeyloggerAlertDto {
+    pub pid: u32,
+    pub process_name: String,
+    pub confidence: u8,
+    pub severity: u8,
+    pub indicators: Vec<String>,
+    pub mitre_id: String,
+    pub mitre_name: String,
+    pub timestamp: i64,
+    pub is_critical: bool,
+}
+
+impl From<KeyloggerAlert> for KeyloggerAlertDto {
+    fn from(a: KeyloggerAlert) -> Self {
+        let is_critical = a.is_critical();
+        Self {
+            pid: a.pid,
+            process_name: a.process_name,
+            confidence: a.confidence,
+            severity: a.severity,
+            indicators: a.indicators,
+            mitre_id: a.mitre_id,
+            mitre_name: a.mitre_name,
+            timestamp: a.timestamp,
+            is_critical,
+        }
+    }
+}
+
+/// Get keylogger detection alerts
+#[command]
+pub fn get_keylogger_alerts(limit: usize) -> Vec<KeyloggerAlertDto> {
+    keylogger::get_recent_alerts(limit)
+        .into_iter()
+        .map(KeyloggerAlertDto::from)
+        .collect()
+}
+
+/// Get keylogger detection statistics
+#[command]
+pub fn get_keylogger_stats() -> KeyloggerStats {
+    keylogger::get_stats()
+}
+
+/// Check a specific process for keylogger behavior
+#[command]
+pub fn check_process_keylogger(pid: u32, process_name: String) -> Option<KeyloggerAlertDto> {
+    keylogger::analyze_process(pid, &process_name, &[])
+        .map(KeyloggerAlertDto::from)
+}
+
+// ============================================================================
+// IAT ANALYSIS COMMANDS (Phase 9)
+// ============================================================================
+
+/// IAT analysis result DTO for frontend
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IatResultDto {
+    pub file_path: String,
+    pub total_imports: usize,
+    pub is_suspicious: bool,
+    pub max_severity: u8,
+    pub alerts: Vec<IatAlertDto>,
+    pub timestamp: i64,
+}
+
+/// IAT alert DTO
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IatAlertDto {
+    pub combo_name: String,
+    pub mitre_id: String,
+    pub mitre_name: String,
+    pub severity: u8,
+    pub matched_apis: Vec<String>,
+    pub total_apis_in_combo: usize,
+}
+
+impl From<IatAlert> for IatAlertDto {
+    fn from(a: IatAlert) -> Self {
+        Self {
+            combo_name: a.combo_name,
+            mitre_id: a.mitre_id,
+            mitre_name: a.mitre_name,
+            severity: a.severity,
+            matched_apis: a.matched_apis,
+            total_apis_in_combo: a.total_apis_in_combo,
+        }
+    }
+}
+
+impl From<IatAnalysisResult> for IatResultDto {
+    fn from(r: IatAnalysisResult) -> Self {
+        Self {
+            file_path: r.file_path,
+            total_imports: r.total_imports,
+            is_suspicious: r.is_suspicious,
+            max_severity: r.max_severity,
+            alerts: r.alerts.into_iter().map(IatAlertDto::from).collect(),
+            timestamp: r.timestamp,
+        }
+    }
+}
+
+/// Analyze a file's imports for suspicious patterns
+#[command]
+pub fn analyze_file_imports(file_path: String) -> Result<IatResultDto, String> {
+    let path = std::path::Path::new(&file_path);
+    iat_analysis::analyze_file(path)
+        .map(IatResultDto::from)
+        .map_err(|e| e.to_string())
+}
+
+/// Analyze imports from a list of API names
+#[command]
+pub fn analyze_api_imports(imports: Vec<String>) -> Vec<IatAlertDto> {
+    iat_analysis::analyze_imports(&imports)
+        .into_iter()
+        .map(IatAlertDto::from)
+        .collect()
+}
+
+/// Get IAT analysis statistics
+#[command]
+pub fn get_iat_stats() -> IatStats {
+    iat_analysis::get_stats()
+}
+
+/// Clear IAT analysis cache
+#[command]
+pub fn clear_iat_cache() -> String {
+    iat_analysis::clear_cache();
+    "IAT cache cleared".to_string()
 }

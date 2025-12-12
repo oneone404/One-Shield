@@ -212,6 +212,17 @@ fn main() {
             advanced_detection::get_memory_stats,
             advanced_detection::get_threat_alerts,
             advanced_detection::get_advanced_detection_stats,
+
+            // Keylogger Detection Commands (Phase 9)
+            advanced_detection::get_keylogger_alerts,
+            advanced_detection::get_keylogger_stats,
+            advanced_detection::check_process_keylogger,
+
+            // IAT Analysis Commands (Phase 9)
+            advanced_detection::analyze_file_imports,
+            advanced_detection::analyze_api_imports,
+            advanced_detection::get_iat_stats,
+            advanced_detection::clear_iat_cache,
         ])
         .run(tauri::generate_context!())
         .expect("Lỗi khi khởi chạy ứng dụng Tauri");

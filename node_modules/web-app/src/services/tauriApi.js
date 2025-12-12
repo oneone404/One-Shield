@@ -543,6 +543,43 @@ export async function getAdvancedDetectionStats() {
     return invoke('get_advanced_detection_stats');
 }
 
+// ============================================================================
+// KEYLOGGER DETECTION (Phase 9)
+// ============================================================================
+
+export async function getKeyloggerAlerts(limit = 50) {
+    return invoke('get_keylogger_alerts', { limit });
+}
+
+export async function getKeyloggerStats() {
+    return invoke('get_keylogger_stats');
+}
+
+export async function checkProcessKeylogger(pid, processName) {
+    return invoke('check_process_keylogger', { pid, processName });
+}
+
+// ============================================================================
+// IAT ANALYSIS (Phase 9)
+// ============================================================================
+
+export async function analyzeFileImports(filePath) {
+    return invoke('analyze_file_imports', { filePath });
+}
+
+export async function analyzeApiImports(imports) {
+    return invoke('analyze_api_imports', { imports });
+}
+
+export async function getIatStats() {
+    return invoke('get_iat_stats');
+}
+
+export async function clearIatCache() {
+    return invoke('clear_iat_cache');
+}
+
+
 export default {
     // System
     getSystemStatus,
@@ -631,6 +668,15 @@ export default {
     getMemoryStats,
     getThreatAlerts,
     getAdvancedDetectionStats,
+    // Keylogger Detection (Phase 9)
+    getKeyloggerAlerts,
+    getKeyloggerStats,
+    checkProcessKeylogger,
+    // IAT Analysis (Phase 9)
+    analyzeFileImports,
+    analyzeApiImports,
+    getIatStats,
+    clearIatCache,
     // Utility
     formatBytes,
     formatDuration,
