@@ -1,14 +1,22 @@
 /**
  * ThreatAlertPanel - Advanced Detection Alerts Display
  *
- * Hiển thị real-time alerts từ Phase 8 Advanced Detection:
- * - DLL Injection Detection
- * - Memory Shellcode Scanning
- * - AMSI Script Analysis
+ * Hiển thị real-time alerts từ Advanced Detection:
+ * - DLL Injection Detection (Phase 8)
+ * - Memory Shellcode Scanning (Phase 8)
+ * - AMSI Script Analysis (Phase 8)
+ * - Keylogger Detection (Phase 9)
+ * - IAT Analysis (Phase 9)
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { getThreatAlerts, getAdvancedDetectionStats, scanScript } from '../services/tauriApi';
+import {
+    getThreatAlerts,
+    getAdvancedDetectionStats,
+    scanScript,
+    getKeyloggerAlerts,
+    getKeyloggerStats,
+} from '../services/tauriApi';
 import '../styles/components/threat-alert-panel.css';
 
 // Severity icons and colors
@@ -36,7 +44,18 @@ const ALERT_TYPE_ICONS = {
             <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z" />
         </svg>
     ),
+    KEYLOGGER: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="alert-type-icon">
+            <path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z" />
+        </svg>
+    ),
+    IAT: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="alert-type-icon">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+        </svg>
+    ),
 };
+
 
 function ThreatAlertPanel({
     maxAlerts = 10,
@@ -164,6 +183,24 @@ function ThreatAlertPanel({
                     <div className="stat-content">
                         <div className="stat-value">{stats.memory_detections}</div>
                         <div className="stat-label">Shellcode</div>
+                    </div>
+                </div>
+                <div className="threat-stat-card">
+                    <div className="stat-icon keylogger">
+                        {ALERT_TYPE_ICONS.KEYLOGGER}
+                    </div>
+                    <div className="stat-content">
+                        <div className="stat-value">{stats.keylogger_alerts || 0}</div>
+                        <div className="stat-label">Keylogger</div>
+                    </div>
+                </div>
+                <div className="threat-stat-card">
+                    <div className="stat-icon iat">
+                        {ALERT_TYPE_ICONS.IAT}
+                    </div>
+                    <div className="stat-content">
+                        <div className="stat-value">{stats.iat_suspicious || 0}</div>
+                        <div className="stat-label">IAT Suspicious</div>
                     </div>
                 </div>
                 <div className="threat-stat-card critical">

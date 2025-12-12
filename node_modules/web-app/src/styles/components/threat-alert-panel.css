@@ -179,6 +179,16 @@
     color: #4fd1c5;
 }
 
+.threat-stat-card .stat-icon.keylogger {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.threat-stat-card .stat-icon.iat {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196f3;
+}
+
 .threat-stat-card .stat-icon.critical-icon {
     background: rgba(255, 71, 87, 0.2);
     color: #ff4757;
