@@ -71,6 +71,11 @@ impl Incident {
     }
 
     fn map_severity(rec: &DatasetRecordSummary) -> Severity {
+        Self::map_severity_static(rec)
+    }
+
+    /// Static version for external use
+    pub fn map_severity_static(rec: &DatasetRecordSummary) -> Severity {
         match rec.threat {
             ThreatClass::Benign => Severity::Low,
             ThreatClass::Suspicious => {

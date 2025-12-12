@@ -3,10 +3,11 @@ use parking_lot::Mutex;
 use uuid::Uuid;
 use chrono::Utc;
 
-use super::types::{Incident, DatasetRecordSummary};
+use super::types::{Incident, DatasetRecordSummary, Severity};
 use crate::logic::threat::ThreatClass;
 use crate::logic::dataset::DatasetRecord;
 use crate::logic::explain::explain;
+use crate::logic::cloud_sync;
 
 // Global Incident Manager (In-Memory for P3.1)
 static MANAGER: Mutex<Option<IncidentManager>> = Mutex::new(None);
@@ -63,8 +64,62 @@ impl IncidentManager {
                 }
             }
         } else {
-            let inc = Incident::new(summary, explanation);
-            self.active.insert(inc.incident_id, inc);
+            // Create NEW incident
+            let inc = Incident::new(summary.clone(), explanation.clone());
+            let incident_id = inc.incident_id;
+            self.active.insert(incident_id, inc);
+
+            // ===== CLOUD SYNC: Queue new incident for cloud =====
+            if cloud_sync::is_connected() {
+                let severity_str = match Incident::map_severity_static(&summary) {
+                    Severity::Low => "low",
+                    Severity::Medium => "medium",
+                    Severity::High => "high",
+                    Severity::Critical => "critical",
+                };
+
+                let title = if !summary.tags.is_empty() {
+                    format!("Anomaly: {}", summary.tags.join(", "))
+                } else {
+                    format!("Anomaly detected (score: {:.2})", summary.score)
+                };
+
+                // Create description from top contributions
+                let description = explanation.as_ref().map(|e| {
+                    let top_factors: Vec<String> = e.contributions.iter()
+                        .take(3)
+                        .map(|c| format!("{}: {:.2}", c.name, c.importance))
+                        .collect();
+                    format!("Top factors: {}", top_factors.join(", "))
+                });
+
+                // Extract MITRE techniques from contribution names (if they start with T)
+                let mitre_techniques = explanation.as_ref().map(|e| {
+                    e.contributions.iter()
+                        .filter_map(|c| {
+                            if c.name.starts_with("T") {
+                                Some(c.name.clone())
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                });
+
+                let threat_class = Some(format!("{:?}", summary.threat));
+
+                cloud_sync::sync::queue_incident(
+                    incident_id,
+                    severity_str.to_string(),
+                    title,
+                    description,
+                    mitre_techniques,
+                    threat_class,
+                    Some(summary.confidence),
+                );
+
+                log::debug!("☁️ Incident {} queued for cloud sync", incident_id);
+            }
         }
     }
 }

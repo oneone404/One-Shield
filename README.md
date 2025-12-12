@@ -164,6 +164,7 @@
 | **20+ Cloud API Endpoints** | /auth, /agent, /endpoints, /incidents, /reports | ✅ Hoàn thành |
 | **Cloud Status UI** | Real-time indicator trong Header (Connected/Disconnected) | ✅ Hoàn thành |
 | **Heartbeat Counter** | Hiển thị số heartbeats đã gửi | ✅ Hoàn thành |
+| **Incident Auto-Sync** | Tự động sync incidents lên cloud khi phát hiện | ✅ Hoàn thành |
 
 ---
 
