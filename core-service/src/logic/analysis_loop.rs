@@ -5,21 +5,26 @@ use crate::logic::{collector, baseline, incident, events};
 use crate::logic::features::vector::FeatureVector;
 use crate::logic::dataset::DatasetRecord;
 use crate::logic::threat::ThreatClass;
-use crate::logic::advanced_detection::injection;
+use crate::logic::advanced_detection::{injection, keylogger};
 
-// Track last injection check time
+// Track last check times
 static LAST_INJECTION_CHECK: AtomicU64 = AtomicU64::new(0);
+static LAST_KEYLOGGER_CHECK: AtomicU64 = AtomicU64::new(0);
+
 const INJECTION_CHECK_INTERVAL_MS: u64 = 10_000; // Check every 10 seconds
+const KEYLOGGER_CHECK_INTERVAL_MS: u64 = 30_000; // Check every 30 seconds
 
 pub fn start() {
-    // Initialize injection detection
+    // Initialize detection modules
     injection::init();
+    keylogger::init();
 
     thread::spawn(move || {
-        log::info!("Analysis Engine loop started");
+        log::info!("Analysis Engine loop started (v2.3 - Advanced Detection)");
         loop {
-            // === ADVANCED DETECTION: Injection Check ===
+            // === ADVANCED DETECTION ===
             check_injection_patterns();
+            check_keylogger_patterns();
 
             let pending = collector::get_pending_summaries();
             if pending.is_empty() {
@@ -80,11 +85,7 @@ pub fn start() {
 
 /// Check running processes for injection patterns
 fn check_injection_patterns() {
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as u64;
-
+    let now = get_current_time_ms();
     let last_check = LAST_INJECTION_CHECK.load(Ordering::Relaxed);
 
     // Only check every INJECTION_CHECK_INTERVAL_MS
@@ -139,6 +140,109 @@ fn check_injection_patterns() {
     }
 }
 
+/// Check running processes for keylogger behavior patterns
+fn check_keylogger_patterns() {
+    let now = get_current_time_ms();
+    let last_check = LAST_KEYLOGGER_CHECK.load(Ordering::Relaxed);
+
+    // Only check every KEYLOGGER_CHECK_INTERVAL_MS
+    if now - last_check < KEYLOGGER_CHECK_INTERVAL_MS {
+        return;
+    }
+
+    LAST_KEYLOGGER_CHECK.store(now, Ordering::Relaxed);
+
+    // Get running processes
+    let processes = collector::get_running_processes(100);
+
+    let mut total_alerts = 0;
+
+    for proc in &processes {
+        // Skip common safe processes
+        if is_safe_process(&proc.name) {
+            continue;
+        }
+
+        // Check for keylogger patterns (static analysis - suspicious names + common APIs)
+        let suspicious_apis = get_common_keylogger_apis();
+
+        if let Some(alert) = keylogger::analyze_process(
+            proc.pid,
+            &proc.name,
+            &suspicious_apis,
+        ) {
+            total_alerts += 1;
+
+            log::warn!(
+                "[KEYLOGGER DETECTED] {} (PID: {}) - confidence: {}% ({})",
+                alert.process_name,
+                alert.pid,
+                alert.confidence,
+                alert.mitre_id
+            );
+
+            // Emit event to frontend
+            events::emit_threat_alert(&serde_json::json!({
+                "type": "KEYLOGGER",
+                "pid": alert.pid,
+                "process_name": alert.process_name,
+                "confidence": alert.confidence,
+                "severity": alert.severity,
+                "indicators": alert.indicators,
+                "mitre_id": alert.mitre_id,
+                "mitre_name": alert.mitre_name,
+                "timestamp": alert.timestamp
+            }));
+        }
+    }
+
+    // Also check tracked processes (runtime behavior)
+    let runtime_alerts = keylogger::check_all_processes();
+    for alert in runtime_alerts {
+        if alert.is_critical() {
+            log::warn!(
+                "[KEYLOGGER BEHAVIOR] {} (PID: {}) - {} indicators",
+                alert.process_name,
+                alert.pid,
+                alert.indicators.len()
+            );
+
+            events::emit_threat_alert(&serde_json::json!({
+                "type": "KEYLOGGER_BEHAVIOR",
+                "pid": alert.pid,
+                "process_name": alert.process_name,
+                "confidence": alert.confidence,
+                "severity": alert.severity,
+                "indicators": alert.indicators,
+                "mitre_id": alert.mitre_id,
+                "timestamp": alert.timestamp
+            }));
+        }
+    }
+
+    if total_alerts > 0 {
+        log::info!("[Advanced Detection] Found {} keylogger alerts", total_alerts);
+    }
+
+    // Cleanup old tracking data (older than 5 minutes)
+    keylogger::cleanup_old_stats(300);
+}
+
+/// Get current time in milliseconds
+fn get_current_time_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+/// Get common keylogger APIs for static analysis
+fn get_common_keylogger_apis() -> Vec<String> {
+    // These are commonly found in keyloggers
+    // In real implementation, we'd scan the process's IAT
+    vec![]
+}
+
 /// Check if process is commonly safe (skip scanning)
 fn is_safe_process(name: &str) -> bool {
     let safe_list = [
@@ -148,6 +252,10 @@ fn is_safe_process(name: &str) -> bool {
         "conhost.exe", "fontdrvhost.exe", "WmiPrvSE.exe",
         // Development tools
         "Code.exe", "node.exe", "cargo.exe", "rustc.exe",
+        // Browser processes
+        "chrome.exe", "firefox.exe", "msedge.exe",
+        // One-Shield itself
+        "ai-security-core.exe",
     ];
 
     safe_list.iter().any(|&s| name.eq_ignore_ascii_case(s))
