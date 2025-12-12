@@ -1,9 +1,9 @@
-# 🗺️ One-Shield Roadmap v2.3 - v3.0
+# 🗺️ One-Shield Roadmap v2.5
 
 > Chi tiết kế hoạch phát triển từ v2.3 đến v3.0, bao gồm giải pháp kỹ thuật cho từng tính năng.
 
 **Cập nhật**: 2025-12-12
-**Version hiện tại**: v2.2.0 (Phase 8 Complete)
+**Version hiện tại**: v2.5.0 (Phase 10 Complete - Cloud Backend)
 
 ---
 
@@ -32,15 +32,15 @@
 | 6 | v2.0 | Enterprise RBAC, Policy Sync, Reports | ~2,500 |
 | 7 | v2.1 | UI Integration, Executive Dashboard | ~1,500 |
 | 8 | v2.2 | AMSI, DLL Injection, Memory Shellcode | ~2,700 |
-| **Total** | **v2.2** | **8 Phases Complete** | **~15,235** |
+| 9 | v2.3 | Keylogger Detection, IAT Analysis | ~1,500 |
+| 10 | v2.5 | Cloud Backend, Agent-Server Sync | ~2,500 |
+| **Total** | **v2.5** | **10 Phases Complete** | **~19,235** |
 
-### 🔜 Cần Làm (v2.3 - v3.0)
+### 🔜 Cần Làm (v3.0)
 
 | Phase | Version | Tính năng chính | Effort |
 |-------|---------|-----------------|--------|
-| 9 | v2.3 | Keylogger Detection, ETW Tracing | 🟡 Medium |
-| 10 | v2.5 | Cloud Backend, Agent-Server Protocol | 🔴 High |
-| 11 | v3.0 | Multi-Tenant, Compliance Reports | 🔴 High |
+| 11 | v3.0 | Multi-Tenant, Compliance Reports, Dashboard | 🔴 High |
 
 ---
 
@@ -485,9 +485,18 @@ goblin = "0.8"  # PE parsing
 
 ---
 
-## ☁️ Phase 10: Cloud & Sync v2.5
+## ☁️ Phase 10: Cloud & Sync v2.5 ✅ COMPLETE
 
 > **Mục tiêu**: Central management với cloud backend.
+>
+> **Status**: ✅ Hoàn thành - 2025-12-12
+>
+> **Thành quả**:
+> - ✅ Cloud Server (Axum + PostgreSQL) - `cloud-server/`
+> - ✅ Agent Registration & Heartbeat (30s intervals)
+> - ✅ JWT Authentication + Agent Token Auth
+> - ✅ Database Schema (Organizations, Endpoints, Incidents, Policies)
+> - ✅ Docker Compose Setup (PostgreSQL + Adminer)
 
 ### 10.1 Cloud Backend Architecture
 

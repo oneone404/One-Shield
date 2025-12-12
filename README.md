@@ -1,12 +1,12 @@
 # 🛡️ One-Shield - AI-Powered Endpoint Detection & Response (EDR)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.2.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/Version-2.5.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Windows-lightgrey" alt="Platform">
   <img src="https://img.shields.io/badge/AI-ONNX%20Runtime-green" alt="AI">
   <img src="https://img.shields.io/badge/UI-React%20%2B%20Tauri-purple" alt="UI">
+  <img src="https://img.shields.io/badge/Cloud-Axum%20%2B%20PostgreSQL-cyan" alt="Cloud">
   <img src="https://img.shields.io/badge/Enterprise-Ready-orange" alt="Enterprise">
-  <img src="https://img.shields.io/badge/Tests-131%20Passed-brightgreen" alt="Tests">
 </p>
 
 **One-Shield** là một giải pháp bảo mật Endpoint thông minh, kết hợp Machine Learning với Behavioral Analysis để phát hiện và phản ứng với các mối đe dọa trong thời gian thực.
@@ -150,6 +150,19 @@
 | **ThreatAlertPanel v2** | 6 stat cards (Script, Inject, Shell, Keylog, IAT, Critical) | ✅ Hoàn thành |
 | **Analysis Loop v2.3** | Keylogger check mỗi 30s | ✅ Hoàn thành |
 
+### ☁️ Cloud Backend v2.5 (Phase 10 - NEW!)
+| Tính năng | Mô tả | Trạng thái |
+|-----------|-------|------------|
+| **Cloud Server** | Axum REST API + PostgreSQL database | ✅ Hoàn thành |
+| **Agent Registration** | Automatic registration với cloud server | ✅ Hoàn thành |
+| **Heartbeat Sync** | Agent gửi heartbeat mỗi 30s | ✅ Hoàn thành |
+| **JWT Authentication** | User auth với JWT tokens | ✅ Hoàn thành |
+| **Agent Token Auth** | Secure agent-to-server communication | ✅ Hoàn thành |
+| **Multi-Tenant Support** | Organizations, Users, Endpoints schema | ✅ Hoàn thành |
+| **Docker Compose** | PostgreSQL + Adminer UI | ✅ Hoàn thành |
+| **6 New API Commands** | get_cloud_sync_status, queue_incident_for_sync, etc. | ✅ Hoàn thành |
+| **20+ Cloud API Endpoints** | /auth, /agent, /endpoints, /incidents, /reports | ✅ Hoàn thành |
+
 ---
 
 
@@ -157,7 +170,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        ONE-SHIELD v2.3                          │
+│                        ONE-SHIELD v2.5                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐ │
