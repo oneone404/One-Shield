@@ -10,15 +10,24 @@ pub async fn create_pool(database_url: &str) -> Result<PgPool, sqlx::Error> {
         .await
 }
 
-/// Run database migrations
+/// Run database migrations (schema already created by init.sql in Docker)
 pub async fn run_migrations(pool: &PgPool) -> Result<(), sqlx::Error> {
-    // Create tables if not exist
-    sqlx::query(SCHEMA_SQL)
-        .execute(pool)
-        .await?;
+    // Schema is created by init.sql when Docker container starts
+    // Just verify connection by checking if main table exists
+    let result = sqlx::query("SELECT 1 FROM organizations LIMIT 1")
+        .fetch_optional(pool)
+        .await;
 
-    tracing::info!("Database schema applied successfully");
-    Ok(())
+    match result {
+        Ok(_) => {
+            tracing::info!("Database schema verified successfully");
+            Ok(())
+        }
+        Err(e) => {
+            tracing::error!("Database schema not found. Make sure Docker container started with init.sql");
+            Err(e)
+        }
+    }
 }
 
 /// Database schema SQL
