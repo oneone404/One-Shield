@@ -162,9 +162,9 @@ export default function Login() {
                         </p>
                     </div>
 
-                    {/* Demo Credentials */}
+                    {/* Organization Signup Link */}
                     <div className="demo-hint">
-                        <p>Demo: Register a new account to start</p>
+                        <p>Need an organization account? <a href="/register" className="org-link">Create Organization</a></p>
                     </div>
                 </div>
             </div>

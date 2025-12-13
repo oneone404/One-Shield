@@ -5,6 +5,7 @@ import Sidebar from './components/Layout/Sidebar';
 
 // Pages
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import TokensPage from './pages/Tokens';
 
@@ -93,6 +94,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>

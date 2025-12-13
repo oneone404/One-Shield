@@ -118,18 +118,26 @@ export async function login(email, password) {
     return data;
 }
 
-export async function register(name, email, password, organizationName = 'My Organization') {
-    const data = await apiRequest('/api/v1/auth/register', {
+/**
+ * Register new organization
+ * @param {Object} data - Registration data
+ * @param {string} data.organization_name - Organization name
+ * @param {string} data.email - Admin email
+ * @param {string} data.password - Admin password
+ * @param {string} [data.name] - Admin name (optional)
+ */
+export async function register(data) {
+    const response = await apiRequest('/api/v1/auth/register', {
         method: 'POST',
         body: JSON.stringify({
-            name,
-            email,
-            password,
-            organization_name: organizationName
+            organization_name: data.organization_name,
+            email: data.email,
+            password: data.password,
+            name: data.name || null,
         }),
         noAuth: true,
     });
-    return data;
+    return response;
 }
 
 // ============================================
