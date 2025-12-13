@@ -1,0 +1,96 @@
+/* TierBadge Styles */
+
+.tier-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: default;
+    transition: all 0.2s;
+}
+
+/* Compact mode */
+.tier-badge.compact {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+}
+
+.tier-badge.compact .tier-label {
+    max-width: 50px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Free Tier - Gray */
+.tier-badge.tier-free {
+    background: rgba(148, 163, 184, 0.15);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: #94a3b8;
+}
+
+.tier-badge.tier-free:hover {
+    background: rgba(148, 163, 184, 0.2);
+}
+
+/* Pro Tier - Gold */
+.tier-badge.tier-pro {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.15));
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    color: #fbbf24;
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.15);
+}
+
+.tier-badge.tier-pro:hover {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2));
+    box-shadow: 0 0 16px rgba(251, 191, 36, 0.25);
+}
+
+.tier-badge.tier-pro svg {
+    color: #fbbf24;
+}
+
+/* Organization Tier - Blue */
+.tier-badge.tier-org {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.15));
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+}
+
+.tier-badge.tier-org:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(99, 102, 241, 0.2));
+}
+
+.tier-badge.tier-org svg {
+    color: #60a5fa;
+}
+
+/* Label */
+.tier-label {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Animation for Pro */
+@keyframes tierGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 12px rgba(251, 191, 36, 0.15);
+    }
+
+    50% {
+        box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+    }
+}
+
+.tier-badge.tier-pro {
+    animation: tierGlow 3s ease-in-out infinite;
+}

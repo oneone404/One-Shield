@@ -1,0 +1,132 @@
+/* UpgradeBanner Styles */
+
+.upgrade-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg,
+            rgba(251, 191, 36, 0.12) 0%,
+            rgba(245, 158, 11, 0.08) 100%);
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Content */
+.upgrade-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.upgrade-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    border-radius: 10px;
+    color: #1e1e1e;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.upgrade-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.upgrade-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fbbf24;
+}
+
+.upgrade-desc {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Actions */
+.upgrade-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.upgrade-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    border: none;
+    border-radius: 8px;
+    color: #1e1e1e;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.upgrade-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(251, 191, 36, 0.4);
+}
+
+.upgrade-dismiss {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.upgrade-dismiss:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .upgrade-banner {
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
+    }
+
+    .upgrade-content {
+        flex-direction: column;
+    }
+
+    .upgrade-actions {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .upgrade-btn {
+        flex: 1;
+        justify-content: center;
+    }
+}

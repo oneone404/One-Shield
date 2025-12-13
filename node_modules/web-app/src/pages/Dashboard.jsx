@@ -14,6 +14,7 @@ import {
     IncidentPanel
 } from '../components'
 import ThreatAlertPanel from '../components/ThreatAlertPanel'
+import UpgradeBanner from '../components/UpgradeBanner'
 
 /* ============================================================================
    MAIN DASHBOARD
@@ -114,6 +115,9 @@ export default function Dashboard({ isMonitoring }) {
 
     return (
         <div className="dashboard-container">
+            {/* Upgrade Banner for Free Tier */}
+            <UpgradeBanner />
+
             {/* AI Engine Observability (P2.1) */}
             <AiEngineStatus />
 

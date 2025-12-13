@@ -67,6 +67,13 @@ const SendIcon = () => (
     </svg>
 );
 
+const UserIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+    </svg>
+);
+
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('quarantine');
 
@@ -92,11 +99,19 @@ export default function SettingsPage() {
                     <WebhookIcon />
                     Webhooks
                 </button>
+                <button
+                    className={activeTab === 'account' ? 'active' : ''}
+                    onClick={() => setActiveTab('account')}
+                >
+                    <UserIcon />
+                    Account
+                </button>
             </div>
 
             <div className="settings-content">
                 {activeTab === 'quarantine' && <QuarantineSection />}
                 {activeTab === 'webhooks' && <WebhooksSection />}
+                {activeTab === 'account' && <AccountSection />}
             </div>
         </div>
     );
@@ -393,6 +408,106 @@ function WebhooksSection() {
                     ))}
                 </div>
             )}
+        </div>
+    );
+}
+
+// Account Section Component
+function AccountSection() {
+    const [accountInfo, setAccountInfo] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAccountInfo = async () => {
+            try {
+                const { invoke } = await import('@tauri-apps/api/core');
+                const mode = await invoke('get_agent_mode');
+
+                setAccountInfo({
+                    mode: mode.mode,
+                    hasIdentity: mode.has_identity,
+                    needsLogin: mode.needs_login,
+                    orgName: mode.org_name || 'Personal Account',
+                    tier: mode.mode === 'organization' ? 'Organization' : 'Personal Free'
+                });
+            } catch (e) {
+                console.error('Failed to fetch account info:', e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAccountInfo();
+    }, []);
+
+    const handleLogout = async () => {
+        if (!confirm('Are you sure you want to logout? This will clear your identity.')) return;
+
+        // Clear local identity and onboarding flags
+        localStorage.removeItem('onboarding_complete');
+        localStorage.removeItem('upgrade_banner_dismissed');
+
+        // TODO: Implement actual logout via Tauri command
+        alert('Logout functionality will require app restart. Please close and reopen the app.');
+    };
+
+    const handleOpenDashboard = async () => {
+        try {
+            const { open } = await import('@tauri-apps/plugin-shell');
+            await open('https://dashboard.accone.vn');
+        } catch (e) {
+            window.location.href = 'https://dashboard.accone.vn';
+        }
+    };
+
+    if (loading) {
+        return <div className="section-loading">Loading account info...</div>;
+    }
+
+    if (!accountInfo?.hasIdentity) {
+        return (
+            <div className="account-section">
+                <div className="empty-state">
+                    <UserIcon />
+                    <h3>Not Logged In</h3>
+                    <p>Please login to view account information</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="account-section">
+            <div className="section-header">
+                <h2>Account Information</h2>
+            </div>
+
+            <div className="account-card">
+                <div className="account-row">
+                    <span className="account-label">Organization</span>
+                    <span className="account-value">{accountInfo.orgName}</span>
+                </div>
+                <div className="account-row">
+                    <span className="account-label">Plan</span>
+                    <span className={`account-tier tier-${accountInfo.mode}`}>
+                        {accountInfo.tier}
+                    </span>
+                </div>
+                <div className="account-row">
+                    <span className="account-label">Mode</span>
+                    <span className="account-value">
+                        {accountInfo.mode === 'organization' ? '🏢 Organization' : '👤 Personal'}
+                    </span>
+                </div>
+            </div>
+
+            <div className="account-actions">
+                <button className="btn-primary" onClick={handleOpenDashboard}>
+                    Open Dashboard
+                </button>
+                <button className="btn-danger" onClick={handleLogout}>
+                    Logout
+                </button>
+            </div>
         </div>
     );
 }

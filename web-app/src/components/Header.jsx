@@ -1,5 +1,6 @@
 import { Search, Bell, Play, Square, Sun, Moon, LogIn, User } from 'lucide-react'
 import CloudStatus from './CloudStatus'
+import TierBadge from './TierBadge'
 
 export default function Header({
     title = 'Dashboard',
@@ -23,6 +24,9 @@ export default function Header({
             <div className="header-right">
                 {/* Cloud Status Indicator */}
                 <CloudStatus compact={true} />
+
+                {/* Tier Badge */}
+                {isAuthenticated && <TierBadge compact={true} />}
 
                 {/* Search */}
                 <div className="header-search">
