@@ -1,6 +1,7 @@
 //! Agent handlers
 
 use axum::{extract::State, Json};
+use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
 use uuid::Uuid;
 use chrono::Utc;
@@ -12,9 +13,42 @@ use crate::models::{
     HeartbeatRequest, HeartbeatResponse, AgentCommand,
     Baseline, SyncBaselineRequest, SyncBaselineResponse,
     Incident, CreateIncident, SyncIncidentsRequest, SyncIncidentsResponse,
-    Policy,
+    Policy, OrganizationToken,
 };
 use crate::middleware::auth::AgentContext;
+
+/// Enrollment request (uses org token instead of registration_key)
+#[derive(Debug, Deserialize)]
+pub struct EnrollAgentRequest {
+    /// Organization enrollment token (ORG_xxx)
+    pub enrollment_token: String,
+    /// Hardware ID of the machine
+    pub hwid: String,
+    /// Machine hostname
+    pub hostname: String,
+    /// Operating system type
+    #[serde(default = "default_os_type")]
+    pub os_type: String,
+    /// Operating system version
+    #[serde(default)]
+    pub os_version: Option<String>,
+    /// Agent version
+    #[serde(default)]
+    pub agent_version: Option<String>,
+}
+
+fn default_os_type() -> String {
+    "Windows".to_string()
+}
+
+/// Enrollment response
+#[derive(Debug, Serialize)]
+pub struct EnrollAgentResponse {
+    pub agent_id: Uuid,
+    pub agent_token: String,
+    pub org_id: Uuid,
+    pub org_name: String,
+}
 
 /// Register new agent
 pub async fn register(
@@ -186,3 +220,117 @@ async fn record_heartbeat_metrics(
     .await?;
     Ok(())
 }
+
+/// Get organization name by ID
+async fn get_org_name(pool: &sqlx::PgPool, org_id: Uuid) -> AppResult<String> {
+    let row = sqlx::query("SELECT name FROM organizations WHERE id = $1")
+        .bind(org_id)
+        .fetch_optional(pool)
+        .await?;
+
+    match row {
+        Some(r) => Ok(r.get::<String, _>("name")),
+        None => Ok("Unknown Organization".to_string()),
+    }
+}
+
+/// Find existing endpoint by HWID
+async fn find_endpoint_by_hwid(pool: &sqlx::PgPool, hwid: &str) -> AppResult<Option<Endpoint>> {
+    let endpoint = sqlx::query_as::<_, Endpoint>(
+        "SELECT * FROM endpoints WHERE hwid = $1"
+    )
+    .bind(hwid)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(endpoint)
+}
+
+/// Enroll agent using organization enrollment token (Phase 12)
+/// This is the new enrollment flow - race-condition safe with atomic token usage
+pub async fn enroll(
+    State(state): State<AppState>,
+    Json(req): Json<EnrollAgentRequest>,
+) -> AppResult<Json<EnrollAgentResponse>> {
+    // 1. Lookup token by value
+    let token = OrganizationToken::get_by_value(&state.pool, &req.enrollment_token)
+        .await?
+        .ok_or_else(|| {
+            tracing::warn!("Invalid enrollment token: {}", &req.enrollment_token[..8.min(req.enrollment_token.len())]);
+            AppError::Unauthorized
+        })?;
+
+    // 2. Check if HWID already registered (re-enrollment case)
+    if let Some(existing) = find_endpoint_by_hwid(&state.pool, &req.hwid).await? {
+        // Re-enrollment: Generate new agent token but keep same agent_id
+        let new_token = Uuid::new_v4().to_string();
+        let token_hash = hash_token(&new_token);
+
+        // Update token hash in DB
+        sqlx::query("UPDATE endpoints SET token_hash = $2, updated_at = NOW() WHERE id = $1")
+            .bind(existing.id)
+            .bind(&token_hash)
+            .execute(&state.pool)
+            .await?;
+
+        let org_name = get_org_name(&state.pool, existing.org_id).await?;
+
+        tracing::info!("Agent re-enrolled: {} (HWID: {}...)", existing.hostname, &req.hwid[..8.min(req.hwid.len())]);
+
+        return Ok(Json(EnrollAgentResponse {
+            agent_id: existing.id,
+            agent_token: new_token,
+            org_id: existing.org_id,
+            org_name,
+        }));
+    }
+
+    // 3. Atomic: Try to use the token (race-condition safe)
+    if !OrganizationToken::try_use(&state.pool, token.id).await? {
+        // Token exhausted, expired, or revoked
+        tracing::warn!("Token exhausted/expired: {}", token.id);
+        return Err(AppError::Forbidden);
+    }
+
+    // 4. Generate agent token
+    let agent_token = Uuid::new_v4().to_string();
+    let token_hash = hash_token(&agent_token);
+
+    // 5. Register new endpoint with HWID
+    let endpoint_id = Uuid::new_v4();
+    sqlx::query(
+        r#"
+        INSERT INTO endpoints (id, org_id, hostname, os_type, os_version, agent_version, hwid, token_hash, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'online')
+        "#
+    )
+    .bind(endpoint_id)
+    .bind(token.org_id)
+    .bind(&req.hostname)
+    .bind(&req.os_type)
+    .bind(&req.os_version)
+    .bind(&req.agent_version)
+    .bind(&req.hwid)
+    .bind(&token_hash)
+    .execute(&state.pool)
+    .await?;
+
+    // 6. Get org name
+    let org_name = get_org_name(&state.pool, token.org_id).await?;
+
+    tracing::info!(
+        "Agent enrolled: {} (id: {}, org: {}, hwid: {}...)",
+        req.hostname,
+        endpoint_id,
+        org_name,
+        &req.hwid[..8.min(req.hwid.len())]
+    );
+
+    Ok(Json(EnrollAgentResponse {
+        agent_id: endpoint_id,
+        agent_token,
+        org_id: token.org_id,
+        org_name,
+    }))
+}
+

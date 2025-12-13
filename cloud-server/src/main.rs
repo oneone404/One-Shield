@@ -99,8 +99,10 @@ fn create_router(state: AppState) -> Router {
         .route("/health", get(handlers::health::check))
         .route("/api/v1/auth/login", post(handlers::auth::login))
         .route("/api/v1/auth/register", post(handlers::auth::register))
-        // Agent registration is public (uses registration_key instead of token)
-        .route("/api/v1/agent/register", post(handlers::agent::register));
+        // Agent registration (legacy - uses registration_key)
+        .route("/api/v1/agent/register", post(handlers::agent::register))
+        // Agent enrollment (new - uses org enrollment token)
+        .route("/api/v1/agent/enroll", post(handlers::agent::enroll));
 
     // Agent routes (agent token auth) - requires registered agent token
     let agent_routes = Router::new()
@@ -138,6 +140,12 @@ fn create_router(state: AppState) -> Router {
         // Organization
         .route("/api/v1/organization", get(handlers::organization::get))
         .route("/api/v1/organization/users", get(handlers::organization::list_users))
+
+        // Enrollment Tokens (Phase 12)
+        .route("/api/v1/tokens", get(handlers::tokens::list_tokens))
+        .route("/api/v1/tokens", post(handlers::tokens::create_token))
+        .route("/api/v1/tokens/:id", get(handlers::tokens::get_token))
+        .route("/api/v1/tokens/:id", delete(handlers::tokens::revoke_token))
 
         .layer(axum_middleware::from_fn_with_state(
             state.clone(),

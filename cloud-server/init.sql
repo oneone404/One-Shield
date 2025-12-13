@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS incidents (
     severity VARCHAR(20) NOT NULL,
     title VARCHAR(500) NOT NULL,
     description TEXT,
-    mitre_techniques JSONB, 
+    mitre_techniques JSONB,
     threat_class VARCHAR(50),
     confidence REAL,
     status VARCHAR(20) DEFAULT 'open',
@@ -113,10 +113,56 @@ CREATE TABLE IF NOT EXISTS heartbeat_history (
     recorded_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Organization Enrollment Tokens (Phase 12)
+CREATE TABLE IF NOT EXISTS organization_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+
+    -- Token value (unique, random)
+    token VARCHAR(255) NOT NULL UNIQUE,
+
+    -- Friendly name for the token
+    name VARCHAR(100) NOT NULL DEFAULT 'Default Token',
+
+    -- Optional expiration
+    expires_at TIMESTAMPTZ,
+
+    -- Usage limits
+    max_uses INT,                    -- NULL = unlimited
+    uses_count INT DEFAULT 0,
+
+    -- Status
+    is_active BOOLEAN DEFAULT true,
+
+    -- Audit
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    revoked_at TIMESTAMPTZ
+);
+
+-- Add tier to organizations (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name = 'organizations' AND column_name = 'tier') THEN
+        ALTER TABLE organizations ADD COLUMN tier VARCHAR(20) DEFAULT 'personal';
+    END IF;
+END $$;
+
+-- Add hwid to endpoints for duplicate detection
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name = 'endpoints' AND column_name = 'hwid') THEN
+        ALTER TABLE endpoints ADD COLUMN hwid VARCHAR(255);
+    END IF;
+END $$;
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_endpoints_org ON endpoints(org_id);
 CREATE INDEX IF NOT EXISTS idx_endpoints_heartbeat ON endpoints(last_heartbeat);
 CREATE INDEX IF NOT EXISTS idx_endpoints_status ON endpoints(status);
+CREATE INDEX IF NOT EXISTS idx_endpoints_hwid ON endpoints(hwid);
 CREATE INDEX IF NOT EXISTS idx_incidents_endpoint ON incidents(endpoint_id);
 CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
 CREATE INDEX IF NOT EXISTS idx_incidents_created ON incidents(created_at);
@@ -125,6 +171,9 @@ CREATE INDEX IF NOT EXISTS idx_audit_org ON audit_log(org_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_users_org ON users(org_id);
 CREATE INDEX IF NOT EXISTS idx_policies_org ON policies(org_id);
 CREATE INDEX IF NOT EXISTS idx_heartbeat_endpoint ON heartbeat_history(endpoint_id, recorded_at);
+CREATE INDEX IF NOT EXISTS idx_tokens_org ON organization_tokens(org_id);
+CREATE INDEX IF NOT EXISTS idx_tokens_token ON organization_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_tokens_active ON organization_tokens(is_active, expires_at);
 
 -- Insert default organization
 INSERT INTO organizations (name, license_key, max_agents)
