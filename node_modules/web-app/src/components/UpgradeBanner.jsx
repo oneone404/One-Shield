@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { invoke } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-shell'
 import { Crown, X, ExternalLink } from 'lucide-react'
 import './UpgradeBanner.css'
 
@@ -53,13 +52,9 @@ export default function UpgradeBanner() {
         setVisible(false)
     }
 
-    const handleUpgrade = async () => {
-        try {
-            await open('https://oneshield.vn/pricing')
-        } catch (e) {
-            // Fallback: open via href
-            window.location.href = 'https://oneshield.vn/pricing'
-        }
+    const handleUpgrade = () => {
+        // Open external link
+        window.open('https://oneshield.vn/pricing', '_blank')
     }
 
     if (!visible || tier !== 'personal_free') {

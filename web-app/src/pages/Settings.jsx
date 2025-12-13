@@ -450,13 +450,8 @@ function AccountSection() {
         alert('Logout functionality will require app restart. Please close and reopen the app.');
     };
 
-    const handleOpenDashboard = async () => {
-        try {
-            const { open } = await import('@tauri-apps/plugin-shell');
-            await open('https://dashboard.accone.vn');
-        } catch (e) {
-            window.location.href = 'https://dashboard.accone.vn';
-        }
+    const handleOpenDashboard = () => {
+        window.open('https://dashboard.accone.vn', '_blank');
     };
 
     if (loading) {
