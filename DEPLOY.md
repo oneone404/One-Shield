@@ -171,28 +171,32 @@ ALTER TABLE organizations ADD COLUMN IF NOT EXISTS tier VARCHAR(50) DEFAULT 'org
 ```powershell
 cd cloud-server
 
-# Build and run
+# Build and run (dev)
 cargo run --release
 
 # Server starts at http://localhost:8080
 ```
 
-### Option B: Production (Background)
+### Option B: Production (Recommended)
 
 ```powershell
 cd cloud-server
 
-# Build release binary
+# 1. Build release binary FIRST
 cargo build --release
 
-# Run in background (Windows)
-Start-Process -NoNewWindow -FilePath ".\target\release\oneshield-cloud.exe"
+# 2. Run the compiled binary (NOT cargo run)
+.\target\release\oneshield-cloud.exe
 
-# Or using PM2 (cross-platform)
+# 3. Or use PM2 for process management
 npm install -g pm2
-pm2 start "cargo run --release" --name oneshield-api
+pm2 start .\target\release\oneshield-cloud.exe --name oneshield-api
 pm2 save
+pm2 startup  # Auto-start on reboot
 ```
+
+> ⚠️ **IMPORTANT**: In production, ALWAYS run the compiled binary, NOT `cargo run`.
+> `cargo run --release` rebuilds on every restart = slow + risk.
 
 ### Health Check
 
@@ -236,6 +240,12 @@ cmd /c "npx wrangler login"
 cmd /c "npx wrangler pages deploy dist --project-name=oneshield-dashboard --commit-dirty=true --commit-message=Deploy"
 ```
 
+> ⚠️ **WARNING - Windows PowerShell UTF-8 Issue:**
+> - ALWAYS use ASCII-only `--commit-message`
+> - ❌ NO emoji, NO tiếng Việt, NO special characters
+> - ✅ Good: `--commit-message=Deploy` or `--commit-message=UpdateV2`
+> - ❌ Bad: `--commit-message="Deploy 🚀"` or `--commit-message="Cập nhật"`
+
 **Expected output:**
 ```
 ✨ Success! Uploaded X files
@@ -252,7 +262,7 @@ Create `deploy-dashboard.ps1`:
 Set-Location "$PSScriptRoot/cloud-server/dashboard"
 npm run build
 cmd /c "npx wrangler pages deploy dist --project-name=oneshield-dashboard --commit-dirty=true --commit-message=Deploy"
-Write-Host "✅ Dashboard deployed!"
+Write-Host "Dashboard deployed!"
 ```
 
 ---
@@ -314,14 +324,27 @@ cloudflared tunnel route dns oneshield-api api.accone.vn
 
 #### 6. Run Tunnel
 
+**Development (manual):**
 ```powershell
-# Foreground
 cloudflared tunnel run oneshield-api
-
-# Background (Windows Service)
-cloudflared service install
-cloudflared service start
 ```
+
+**Production (Windows Service) - RECOMMENDED:**
+```powershell
+# Install as Windows Service (run once)
+cloudflared service install
+
+# Start service
+cloudflared service start
+
+# Check status
+cloudflared service status
+```
+
+> ⚠️ **PRODUCTION RULE:**
+> - ✅ ALWAYS use `cloudflared service install` + `service start`
+> - ❌ DO NOT use `cloudflared tunnel run` manually
+> - Reason: Service auto-restarts after reboot, manual run = API dies on reboot
 
 ---
 
@@ -387,24 +410,106 @@ pm2 restart oneshield-api
 cloudflared service restart
 ```
 
-### Update Deployment
+---
+
+## 🔄 Updating System (After Initial Deployment)
+
+### Case 1: Update Dashboard Only (UI changes)
+
+> ✅ NO restart needed for API, Database, or Tunnel
 
 ```powershell
-# Pull latest code
-git pull origin main
+cd cloud-server/dashboard
 
-# Rebuild API
+git pull origin main
+npm install        # only if dependencies changed
+npm run build
+
+cmd /c "npx wrangler pages deploy dist --project-name=oneshield-dashboard --commit-dirty=true --commit-message=Update"
+```
+
+**Why no restart?** Dashboard is static files on Cloudflare Pages - completely independent.
+
+---
+
+### Case 2: Update Backend (API / Logic)
+
+> ⚠️ Requires API restart, but NOT tunnel or database
+
+```powershell
 cd cloud-server
+
+git pull origin main
 cargo build --release
 
-# Rebuild & deploy dashboard
-cd dashboard
-npm run build
-cmd /c "npx wrangler pages deploy dist --project-name=oneshield-dashboard --commit-dirty=true --commit-message=Update"
+# Restart API
+pm2 restart oneshield-api
 
-# Restart API server
-# (depends on your deployment method)
+# Verify
+Invoke-RestMethod -Uri "http://localhost:8080/health"
 ```
+
+**Tunnel stays connected** - as long as port 8080 doesn't change.
+
+---
+
+### Case 3: Update Database Schema
+
+> ⚠️ ALWAYS backup before schema changes
+
+```powershell
+# Backup first
+docker exec oneshield-db pg_dump -U oneshield oneshield > backup_before_migration.sql
+
+# Run migration
+docker exec -it oneshield-db psql -U oneshield -d oneshield
+
+# Example: Add column
+ALTER TABLE endpoints ADD COLUMN IF NOT EXISTS new_field VARCHAR(255);
+
+# Exit psql
+\q
+```
+
+**Usually NO restart needed** unless connection pool issues.
+
+---
+
+### Case 4: Server Reboot / Crash Recovery
+
+> Full recovery after server restart or crash
+
+```powershell
+# 1. Start Database
+cd cloud-server
+docker compose up -d postgres
+
+# 2. Start API (PM2 auto-resurrects if configured)
+pm2 resurrect
+# OR if PM2 not configured:
+pm2 start .\target\release\oneshield-cloud.exe --name oneshield-api
+
+# 3. Start Tunnel (if installed as service, auto-starts)
+cloudflared service start
+
+# 4. Verify everything
+docker ps                                              # DB running
+Invoke-RestMethod -Uri "http://localhost:8080/health"  # API running
+Invoke-RestMethod -Uri "https://api.accone.vn/health"  # Tunnel working
+```
+
+---
+
+### Quick Reference: What to Restart?
+
+| Change Type | Database | API | Tunnel | Dashboard |
+|-------------|----------|-----|--------|-----------|
+| UI only | ❌ | ❌ | ❌ | ✅ Deploy |
+| API logic | ❌ | ✅ Restart | ❌ | ❌ |
+| DB schema | ⚠️ Maybe | ❌ | ❌ | ❌ |
+| Server reboot | ✅ Start | ✅ Start | ✅ Start | ❌ |
+| Tunnel config | ❌ | ❌ | ✅ Restart | ❌ |
+
 
 ### Database Backup
 
@@ -530,23 +635,94 @@ cloud-server/
 
 ## 🚀 Quick Start (TL;DR)
 
+### Development
+
 ```powershell
 # 1. Start database
 cd cloud-server
 docker compose up -d postgres adminer
 
-# 2. Start API
+# 2. Start API (dev)
 cargo run --release
 
-# 3. (New terminal) Start tunnel
+# 3. (New terminal) Start tunnel (dev)
 cloudflared tunnel run oneshield-api
 
 # 4. Deploy dashboard (if changed)
 cd dashboard
 npm run build
-cmd /c "npx wrangler pages deploy dist --project-name=oneshield-dashboard --commit-dirty=true"
+cmd /c "npx wrangler pages deploy dist --project-name=oneshield-dashboard --commit-dirty=true --commit-message=Deploy"
 
 # Done! 🎉
+```
+
+### Production
+
+```powershell
+# 1. Database
+cd cloud-server
+docker compose up -d postgres
+
+# 2. Build & start API (compiled binary)
+cargo build --release
+pm2 start .\target\release\oneshield-cloud.exe --name oneshield-api
+pm2 save
+
+# 3. Tunnel as service
+cloudflared service install
+cloudflared service start
+
+# 4. Dashboard on Cloudflare Pages (already deployed)
+
+# URLs:
 # - Dashboard: https://dashboard.accone.vn
 # - API: https://api.accone.vn
 ```
+
+---
+
+## 🔐 Security Notes (Production)
+
+> **CRITICAL for production deployment:**
+
+### Environment & Secrets
+
+- ❌ **NEVER** commit `.env` to Git (already in `.gitignore`)
+- 🔄 **ROTATE** `JWT_SECRET` before public launch
+- 🔑 Generate strong secret: `openssl rand -hex 32`
+
+### Network Exposure
+
+| Port | Should be public? | Notes |
+|------|------------------|-------|
+| 8080 | ❌ Only via Tunnel | Cloudflare Tunnel handles SSL |
+| 5432 | ❌ Never | PostgreSQL - localhost only |
+| 8081 | ❌ Never | Adminer - localhost only |
+
+### Cloudflare Tunnel
+
+- ✅ Exposes ONLY port 8080 (API)
+- ✅ Handles SSL/TLS automatically
+- ✅ DDoS protection included
+- ✅ No firewall rules needed on server
+
+### Database
+
+- ✅ PostgreSQL bound to localhost (Docker internal)
+- ✅ Credentials in `.env` only
+- 🔄 Change default password for production:
+
+```yaml
+# docker-compose.yml
+environment:
+  POSTGRES_PASSWORD: ${DB_PASSWORD}  # Use env var
+```
+
+### Checklist Before Public Launch
+
+- [ ] Change JWT_SECRET to new random value
+- [ ] Change database password
+- [ ] Remove Adminer container (or restrict access)
+- [ ] Enable Cloudflare WAF rules
+- [ ] Test rate limiting
+- [ ] Verify HTTPS only (no HTTP)
