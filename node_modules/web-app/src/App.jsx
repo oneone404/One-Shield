@@ -19,6 +19,7 @@ import { useActionGuard } from './hooks/useActionGuard'
 
 // Import TitleBar CSS
 import './styles/components/titlebar.css'
+import { useToast } from './components/Toast'
 
 function App() {
   const [activePage, setActivePage] = useState('dashboard')
@@ -32,6 +33,10 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [userName, setUserName] = useState('')
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [cloudConnected, setCloudConnected] = useState(null) // null = unknown, true/false = status
+
+  const { toast } = useToast()
 
   // Persist sidebar state
   useEffect(() => {
@@ -50,6 +55,61 @@ function App() {
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark')
   }
+
+  // Network status monitoring
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true)
+      toast.success('Network connection restored')
+    }
+    const handleOffline = () => {
+      setIsOnline(false)
+      toast.error('Network connection lost', 0) // 0 = persistent until dismissed
+    }
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [toast])
+
+  // Cloud connection polling
+  useEffect(() => {
+    let prevConnected = null
+
+    const checkCloudStatus = async () => {
+      try {
+        const status = await api.invoke('get_cloud_sync_status')
+        const connected = status.is_connected && status.is_registered
+
+        // Toast on status change
+        if (prevConnected !== null && prevConnected !== connected) {
+          if (connected) {
+            toast.success('Cloud sync reconnected')
+          } else if (status.is_registered) {
+            toast.warning('Cloud sync disconnected')
+          }
+        }
+
+        prevConnected = connected
+        setCloudConnected(connected)
+      } catch (e) {
+        // Silent fail for polling
+      }
+    }
+
+    // Initial check after 5s
+    const timer = setTimeout(checkCloudStatus, 5000)
+    // Poll every 30s
+    const interval = setInterval(checkCloudStatus, 30000)
+
+    return () => {
+      clearTimeout(timer)
+      clearInterval(interval)
+    }
+  }, [toast])
 
   // Hook logic
   const { pendingActions, hasPendingActions, approve, cancel } = useActionGuard({
@@ -99,6 +159,7 @@ function App() {
         setIsMonitoring(true);
       } catch (e) {
         console.error("Failed to init", e);
+        toast.error('Failed to initialize app')
       }
     };
     showWindow();
@@ -204,9 +265,12 @@ function App() {
           onSuccess={(result) => {
             setIsAuthenticated(true)
             setUserName(result?.name || result?.email || '')
-            // Show welcome modal for new users
+            // Toast notification
             if (result?.is_new_user) {
+              toast.success('Account created! Welcome to One-Shield 🛡️')
               setShowWelcome(true)
+            } else {
+              toast.success('Welcome back! You are now protected 🛡️')
             }
             console.log('Auth success:', result)
           }}
