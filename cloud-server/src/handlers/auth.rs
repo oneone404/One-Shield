@@ -204,6 +204,16 @@ pub async fn personal_enroll(
             .await?
             .ok_or_else(|| AppError::InternalError("Organization not found".to_string()))?;
 
+        // 🔒 IMPORTANT: Block Organization tier users from using /personal/enroll
+        // They MUST use enrollment tokens via /agent/enroll
+        if org.is_organization() {
+            tracing::warn!(
+                "Organization user {} tried to use /personal/enroll (org: {})",
+                user.email, org.name
+            );
+            return Err(AppError::Forbidden);
+        }
+
         // Check device limit
         let device_count = org.count_agents(&state.pool).await?;
         let max_devices = org.max_devices();
