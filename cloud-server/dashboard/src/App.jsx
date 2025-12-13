@@ -78,15 +78,8 @@ function SettingsPage() {
   );
 }
 
-// Users page (Organization only)
-function UsersPage() {
-  return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Users</h1>
-      <p>Manage organization users...</p>
-    </div>
-  );
-}
+// Import UsersPage from pages
+import UsersPage from './pages/Users';
 
 function App() {
   return (

@@ -11,6 +11,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import Header from '../components/Layout/Header';
+import { EmptyAgents, EmptyIncidents } from '../components/EmptyState';
 import { getEndpoints, getIncidents } from '../services/api';
 import './Dashboard.css';
 
@@ -212,7 +213,7 @@ export default function Dashboard() {
                                     <AgentCard key={agent.id} agent={agent} />
                                 ))
                             ) : (
-                                <p className="empty-message">No agents registered</p>
+                                <EmptyAgents />
                             )}
                         </div>
                     </section>
@@ -246,7 +247,7 @@ export default function Dashboard() {
                                     </tbody>
                                 </table>
                             ) : (
-                                <p className="empty-message">No incidents recorded</p>
+                                <EmptyIncidents />
                             )}
                         </div>
                     </section>
