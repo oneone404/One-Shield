@@ -5,6 +5,7 @@ import TitleBar from './components/TitleBar'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import ApprovalModal from './components/ApprovalModal'
+import AuthModal from './components/AuthModal'
 
 // Pages
 import Dashboard from './pages/Dashboard'
@@ -25,6 +26,8 @@ function App() {
     // Read initial state from storage
     return localStorage.getItem('sidebarCollapsed') === 'true'
   })
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   // Persist sidebar state
   useEffect(() => {
@@ -64,6 +67,20 @@ function App() {
       try {
         await new Promise(resolve => setTimeout(resolve, 100));
         await api.invoke('show_main_window');
+
+        // Check if user needs to login (personal mode)
+        try {
+          const modeResult = await api.invoke('get_agent_mode');
+          if (modeResult.needs_login) {
+            setShowAuthModal(true);
+          } else {
+            setIsAuthenticated(true);
+          }
+        } catch (e) {
+          // Fallback: assume not authenticated
+          console.warn('Could not check agent mode:', e);
+        }
+
         // Auto-start Monitoring (v1.0 Experience)
         await api.startCollector();
         setIsMonitoring(true);
@@ -164,6 +181,16 @@ function App() {
             onClose={() => setShowApprovalModal(false)}
           />
         )}
+
+        {/* Auth Modal for Personal Mode */}
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={(result) => {
+            setIsAuthenticated(true)
+            console.log('Auth success:', result)
+          }}
+        />
       </div>
     </>
   )
