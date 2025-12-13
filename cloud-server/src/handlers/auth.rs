@@ -76,12 +76,13 @@ pub async fn register(
         return Err(AppError::AlreadyExists("Email already registered".to_string()));
     }
 
-    // Create organization
+    // Create organization (defaults to organization tier for dashboard signup)
     let org = Organization::create(
         &state.pool,
         CreateOrganization {
             name: req.organization_name,
             max_agents: Some(10),
+            tier: Some("organization".to_string()),
         }
     ).await?;
 

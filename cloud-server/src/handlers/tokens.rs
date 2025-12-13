@@ -32,7 +32,7 @@ pub async fn list_tokens(
 }
 
 /// Create a new enrollment token
-/// Requires: Admin role
+/// Requires: Admin role + Organization tier
 pub async fn create_token(
     State(state): State<AppState>,
     user: UserContext,
@@ -40,6 +40,20 @@ pub async fn create_token(
 ) -> AppResult<Json<CreateTokenResponse>> {
     // RBAC: Admin only
     require_admin(&user)?;
+
+    // Tier check: Only Organization tier can create tokens
+    let org = crate::models::Organization::find_by_id(&state.pool, user.org_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Organization not found".to_string()))?;
+
+    if !org.can_create_tokens() {
+        tracing::warn!(
+            "Personal tier {} tried to create token (tier: {:?})",
+            user.org_id,
+            org.get_tier()
+        );
+        return Err(AppError::Forbidden);
+    }
 
     let token = OrganizationToken::create(
         &state.pool,
@@ -58,7 +72,7 @@ pub async fn create_token(
         token.token
     );
 
-    tracing::info!("Token created: {} by admin {}", token.id, user.user_id);
+    tracing::info!("Token created: {} by admin {} (org: {})", token.id, user.user_id, org.name);
 
     Ok(Json(CreateTokenResponse {
         id: token.id,

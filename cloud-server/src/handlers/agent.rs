@@ -186,12 +186,13 @@ async fn get_default_org(pool: &sqlx::PgPool) -> AppResult<Uuid> {
     match row {
         Some(r) => Ok(r.get::<Uuid, _>("id")),
         None => {
-            // Create default org
+            // Create default org (organization tier for legacy/fallback)
             let org = crate::models::Organization::create(
                 pool,
                 crate::models::CreateOrganization {
                     name: "Default Organization".to_string(),
                     max_agents: Some(100),
+                    tier: Some("organization".to_string()),
                 }
             ).await?;
             Ok(org.id)
