@@ -87,6 +87,10 @@ impl IdentityManager {
     }
 
     /// Initialize identity on startup
+    ///
+    /// Enterprise EDR behavior:
+    /// - If config tampered → emit incident + self-heal
+    /// - User sửa file = vô nghĩa
     pub fn initialize(&mut self) -> Result<IdentityState, IdentityError> {
         log::info!("Initializing agent identity...");
         log::info!("HWID: {}...{}", &self.hwid[..8], &self.hwid[self.hwid.len()-8..]);
@@ -106,27 +110,86 @@ impl IdentityManager {
                 Ok(IdentityState::Loaded(identity))
             }
             Err(IdentityError::InvalidSignature) => {
-                log::warn!("Identity file has invalid signature (tampered?)");
+                // 🛡️ CONFIG TAMPERING DETECTED!
+                log::error!("🚨 CONFIG TAMPERING DETECTED: Invalid signature!");
+                log::warn!("Identity file has been modified by user/attacker");
+
+                // Emit tamper incident (MITRE T1562 - Impair Defenses)
+                Self::emit_tamper_incident("invalid_signature", "Identity file signature mismatch - file was modified");
+
+                // Self-heal: Delete corrupted file, force re-registration
+                if let Err(e) = self.storage.delete() {
+                    log::error!("Failed to delete tampered config: {}", e);
+                }
+
+                log::info!("Self-healing: Deleted tampered config, will re-register");
+
                 Ok(IdentityState::Invalid {
                     hwid: self.hwid.clone(),
-                    reason: "Invalid signature".to_string()
+                    reason: "Config tampering detected - self-healed".to_string()
                 })
             }
             Err(IdentityError::HwidMismatch) => {
-                log::warn!("Identity file HWID mismatch (copied from another machine?)");
+                // 🛡️ CONFIG COPIED FROM ANOTHER MACHINE!
+                log::error!("🚨 CONFIG TAMPERING DETECTED: HWID mismatch!");
+                log::warn!("Identity file was copied from another machine");
+
+                // Emit tamper incident
+                Self::emit_tamper_incident("hwid_mismatch", "Identity file copied from another machine - HWID mismatch");
+
+                // Self-heal
+                if let Err(e) = self.storage.delete() {
+                    log::error!("Failed to delete copied config: {}", e);
+                }
+
+                log::info!("Self-healing: Deleted copied config, will re-register");
+
                 Ok(IdentityState::Invalid {
                     hwid: self.hwid.clone(),
-                    reason: "HWID mismatch".to_string()
+                    reason: "Config copied from another machine - self-healed".to_string()
                 })
             }
             Err(e) => {
                 log::error!("Failed to load identity: {}", e);
+
+                // Generic corruption - also self-heal
+                if let Err(del_err) = self.storage.delete() {
+                    log::error!("Failed to delete corrupted config: {}", del_err);
+                }
+
                 Ok(IdentityState::Invalid {
                     hwid: self.hwid.clone(),
                     reason: e.to_string()
                 })
             }
         }
+    }
+
+    /// Emit tamper incident to cloud
+    /// MITRE ATT&CK: T1562 - Impair Defenses
+    ///
+    /// Enterprise EDR: User sửa config = incident gửi lên cloud
+    fn emit_tamper_incident(tamper_type: &str, description: &str) {
+        let incident_id = uuid::Uuid::new_v4();
+
+        log::error!("📢 CONFIG TAMPERING INCIDENT: {} - {}", incident_id, tamper_type);
+        log::warn!("   MITRE: T1562 (Impair Defenses)");
+        log::warn!("   Description: {}", description);
+        log::info!("   Action: Agent self-healed, will re-register with cloud");
+
+        // Queue for cloud sync - this is the important part
+        // Cloud will see this incident even if user tries to hide it
+        crate::logic::cloud_sync::sync::queue_incident(
+            incident_id,
+            "high".to_string(),
+            format!("Config Tampering: {}", tamper_type),
+            Some(description.to_string()),
+            Some(vec!["T1562".to_string(), "T1562.001".to_string()]),
+            Some("Defense Evasion".to_string()),
+            Some(1.0), // 100% confidence - deterministic check
+        );
+
+        log::info!("✅ Tamper incident queued for cloud sync");
     }
 
     /// Save new identity after registration
