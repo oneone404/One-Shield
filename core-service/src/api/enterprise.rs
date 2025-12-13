@@ -496,3 +496,39 @@ fn mask_url(url: &str) -> String {
         url.to_string()
     }
 }
+
+// ============================================================================
+// PERSONAL USER LOGOUT
+// ============================================================================
+
+/// Logout current user (clear identity)
+/// Returns true if identity was cleared, app needs restart
+#[tauri::command]
+pub async fn user_logout() -> Result<serde_json::Value, String> {
+    use crate::logic::identity::get_identity_manager;
+
+    // Clear identity
+    match get_identity_manager().write().clear_identity() {
+        Ok(_) => {
+            log::info!("User logged out - identity cleared");
+
+            // Reset cloud sync status
+            let mut status = crate::logic::cloud_sync::get_status();
+            status.is_registered = false;
+            status.is_connected = false;
+            status.agent_id = None;
+            status.org_id = None;
+            crate::logic::cloud_sync::set_status(status);
+
+            Ok(serde_json::json!({
+                "success": true,
+                "message": "Logged out successfully. Please restart the app.",
+                "needs_restart": true
+            }))
+        }
+        Err(e) => {
+            log::error!("Failed to logout: {:?}", e);
+            Err(format!("Failed to logout: {:?}", e))
+        }
+    }
+}

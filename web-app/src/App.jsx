@@ -159,7 +159,7 @@ function App() {
         setIsMonitoring(true);
       } catch (e) {
         console.error("Failed to init", e);
-        toast.error('Failed to initialize app')
+        // Note: toast not used here as component may not be fully mounted
       }
     };
     showWindow();

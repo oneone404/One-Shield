@@ -218,6 +218,7 @@ fn main() {
             enterprise::get_executive_report,
             enterprise::get_incident_summary,
             enterprise::get_endpoint_stats,
+            enterprise::user_logout,
 
             // Advanced Detection Commands (Phase 8)
             advanced_detection::init_advanced_detection,

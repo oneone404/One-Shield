@@ -416,6 +416,7 @@ function WebhooksSection() {
 function AccountSection() {
     const [accountInfo, setAccountInfo] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [loggingOut, setLoggingOut] = useState(false);
 
     useEffect(() => {
         const fetchAccountInfo = async () => {
@@ -440,14 +441,36 @@ function AccountSection() {
     }, []);
 
     const handleLogout = async () => {
-        if (!confirm('Are you sure you want to logout? This will clear your identity.')) return;
+        if (!confirm('Are you sure you want to logout? You will need to restart the app.')) return;
 
-        // Clear local identity and onboarding flags
+        setLoggingOut(true);
+
+        // Clear local storage flags
         localStorage.removeItem('onboarding_complete');
         localStorage.removeItem('upgrade_banner_dismissed');
 
-        // TODO: Implement actual logout via Tauri command
-        alert('Logout functionality will require app restart. Please close and reopen the app.');
+        try {
+            const { invoke } = await import('@tauri-apps/api/core');
+            const result = await invoke('user_logout');
+
+            if (result.success) {
+                // Show success and prompt restart
+                alert('Logged out successfully! Please close and restart the app.');
+                // Force close the window
+                try {
+                    const { exit } = await import('@tauri-apps/plugin-process');
+                    await exit(0);
+                } catch (e) {
+                    // Fallback: just show message
+                    console.log('App restart required');
+                }
+            }
+        } catch (e) {
+            console.error('Logout failed:', e);
+            alert('Logout failed: ' + e);
+        } finally {
+            setLoggingOut(false);
+        }
     };
 
     const handleOpenDashboard = () => {
@@ -499,8 +522,8 @@ function AccountSection() {
                 <button className="btn-primary" onClick={handleOpenDashboard}>
                     Open Dashboard
                 </button>
-                <button className="btn-danger" onClick={handleLogout}>
-                    Logout
+                <button className="btn-danger" onClick={handleLogout} disabled={loggingOut}>
+                    {loggingOut ? 'Logging out...' : 'Logout'}
                 </button>
             </div>
         </div>
