@@ -218,11 +218,40 @@
 
 ---
 
+### 11.7 🌐 Production Deployment (NEW!)
+
+**Mục tiêu**: Deploy lên production với Cloudflare
+
+**Tasks**:
+- [x] 11.7.1 Setup Cloudflare Tunnel (api.accone.vn → localhost:8080) ✅ (2025-12-13)
+- [x] 11.7.2 Agent connects to production URL ✅ (2025-12-13)
+- [x] 11.7.3 Deploy Dashboard to Cloudflare Workers ✅ (2025-12-13)
+- [x] 11.7.4 Setup custom domain (dashboard.accone.vn) ✅ (2025-12-13)
+- [x] 11.7.5 Config Tamper Detection + Self-Heal ✅ (2025-12-13)
+- [x] 11.7.6 Centralized Config (constants.rs) ✅ (2025-12-13)
+- [x] 11.7.7 Env-based config override (.env files) ✅ (2025-12-13)
+
+**Production URLs**:
+| Service | URL |
+|---------|-----|
+| Cloud API | https://api.accone.vn |
+| Cloud Dashboard | https://dashboard.accone.vn |
+| Dashboard (Workers) | https://oneshield-dashboard.oneonedzi.workers.dev |
+
+---
+
 ## 📝 Notes
 
 - Sử dụng lại design system từ Tauri app (Glassmorphism)
 - API đã có sẵn trong cloud-server
 - Focus vào MVP trước, sau đó polish
+
+**Production Config**:
+```
+📁 core-service/src/constants.rs
+- DEFAULT_CLOUD_URL = "https://api.accone.vn"
+- All config reads from env with fallback to constants
+```
 
 **Start command**:
 ```bash
@@ -238,4 +267,4 @@ npm run dev
 ---
 
 **Created by**: AI Assistant
-**Last Updated**: 2025-12-12
+**Last Updated**: 2025-12-13

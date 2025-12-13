@@ -1,7 +1,7 @@
 # 🛡️ One-Shield - AI-Powered Endpoint Detection & Response (EDR)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.5.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/Version-2.6.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Windows-lightgrey" alt="Platform">
   <img src="https://img.shields.io/badge/AI-ONNX%20Runtime-green" alt="AI">
   <img src="https://img.shields.io/badge/UI-React%20%2B%20Tauri-purple" alt="UI">
@@ -175,7 +175,36 @@
 | **Identity Persistence** | Agent ID lưu vào file, không tạo mới khi restart | ✅ Hoàn thành |
 | **HMAC Signing** | Chống sửa đổi file identity (anti-tampering) | ✅ Hoàn thành |
 | **HWID Verification** | Chống copy file sang máy khác (anti-copy) | ✅ Hoàn thành |
-| **Cloud Management Dashboard** | React Web Console để quản lý agents từ xa | ✅ Hoàn thành |
+| **Config Tamper Detection** | Phát hiện sửa config → Emit incident (MITRE T1562) | ✅ Hoàn thành |
+| **Self-Heal Mechanism** | Agent tự xóa config corrupt và re-register | ✅ Hoàn thành |
+| **Centralized Config** | `constants.rs` - Single source of truth cho URLs | ✅ Hoàn thành |
+
+### 🌐 Production Deployment (Phase 11.5 NEW!)
+
+| Feature | URL / Config | Status |
+|---------|--------------|--------|
+| **Cloud API** | https://api.accone.vn | ✅ LIVE |
+| **Cloud Dashboard** | https://dashboard.accone.vn | ✅ LIVE |
+| **Cloudflare Tunnel** | Secure tunnel từ local → public | ✅ Active |
+| **Cloudflare Workers** | Dashboard CDN global | ✅ Deployed |
+| **SSL/HTTPS** | Auto-managed bởi Cloudflare | ✅ Active |
+
+### 🔧 Configuration Files
+
+```
+📁 core-service/
+├── .env.example          # Agent config template
+├── src/constants.rs      # 🎯 Single source of truth
+│   ├── DEFAULT_CLOUD_URL = "https://api.accone.vn"
+│   ├── DEFAULT_REGISTRATION_KEY
+│   ├── DEFAULT_HEARTBEAT_INTERVAL = 30
+│   └── get_cloud_url(), get_registration_key(), etc.
+│
+📁 cloud-server/
+├── .env.example          # Server config template
+├── dashboard/.env.example # Dashboard config
+│   └── VITE_API_URL = "https://api.accone.vn"
+```
 
 ---
 
@@ -786,6 +815,22 @@ Expected: Dashboard hiện Incident với tags `PROCESSSPIKE`, `HIGHCHURNRATE`.
 
 ---
 
+### 📅 Phase 11.5: Production Deployment (v2.6) ✅ COMPLETE
+> *Mục tiêu: Deploy lên production, SaaS-ready*
+
+| Tính năng | Mô tả | Status |
+|-----------|-------|--------|
+| **Cloudflare Tunnel** | Secure tunnel từ local → public (QUIC) | ✅ Done |
+| **API Production URL** | https://api.accone.vn | ✅ LIVE |
+| **Dashboard Deployment** | Cloudflare Workers CDN global | ✅ Done |
+| **Dashboard URL** | https://dashboard.accone.vn | ✅ LIVE |
+| **Config Tamper Detection** | Phát hiện sửa config → MITRE T1562 incident | ✅ Done |
+| **Self-Heal Mechanism** | Agent tự xóa config corrupt và re-register | ✅ Done |
+| **Centralized Config** | `constants.rs` - Single source of truth | ✅ Done |
+| **Env-based Config** | .env files cho dev/staging override | ✅ Done |
+
+---
+
 ### 📅 Phase 12: Compliance & Reporting (v3.0)
 > *Mục tiêu: Enterprise compliance*
 
@@ -799,7 +844,7 @@ Expected: Dashboard hiện Incident với tags `PROCESSSPIKE`, `HIGHCHURNRATE`.
 
 ---
 
-### 📊 V2.5 Completion Summary
+### 📊 V2.6 Completion Summary
 
 | Phase | Version | Status | LOC |
 |-------|---------|--------|-----|
@@ -813,7 +858,8 @@ Expected: Dashboard hiện Incident với tags `PROCESSSPIKE`, `HIGHCHURNRATE`.
 | Phase 8: Advanced Detection | v2.2 | ✅ Complete | ~1,800 |
 | Phase 10: Cloud Server | v2.4 | ✅ Complete | ~3,500 |
 | Phase 11: Enterprise Identity | v2.5 | ✅ Complete | ~1,500 |
-| **Total** | **v2.5** | **✅ 100%** | **~19,335** |
+| Phase 11.5: Production Deploy | v2.6 | ✅ Complete | ~500 |
+| **Total** | **v2.6** | **✅ 100%** | **~19,835** |
 
 ---
 
