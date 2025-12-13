@@ -16,11 +16,11 @@ pub struct CloudConfig {
 
 impl Default for CloudConfig {
     fn default() -> Self {
+        use crate::constants;
+
         Self {
-            server_url: std::env::var("CLOUD_SERVER_URL")
-                .unwrap_or_else(|_| "https://api.accone.vn".to_string()),
-            registration_key: std::env::var("CLOUD_REGISTRATION_KEY")
-                .unwrap_or_else(|_| "dev-agent-secret-change-in-production-789012".to_string()),
+            server_url: constants::get_cloud_url(),
+            registration_key: constants::get_registration_key(),
             timeout_seconds: 30,
         }
     }

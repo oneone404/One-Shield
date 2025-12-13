@@ -36,18 +36,13 @@ pub struct CloudSyncConfig {
 
 impl Default for CloudSyncConfig {
     fn default() -> Self {
+        use crate::constants;
+
         Self {
-            enabled: std::env::var("CLOUD_SYNC_ENABLED")
-                .map(|s| s.to_lowercase() != "false" && s != "0")
-                .unwrap_or(true),
-            server_url: std::env::var("CLOUD_SERVER_URL")
-                .unwrap_or_else(|_| "https://api.accone.vn".to_string()),
-            registration_key: std::env::var("CLOUD_REGISTRATION_KEY")
-                .unwrap_or_else(|_| "dev-agent-secret-change-in-production-789012".to_string()),
-            heartbeat_interval_secs: std::env::var("CLOUD_HEARTBEAT_INTERVAL")
-                .ok()
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(30),
+            enabled: constants::is_cloud_sync_enabled(),
+            server_url: constants::get_cloud_url(),
+            registration_key: constants::get_registration_key(),
+            heartbeat_interval_secs: constants::get_heartbeat_interval(),
         }
     }
 }
@@ -63,8 +58,7 @@ pub fn get_cloud_sync_status() -> CloudSyncStatus {
         is_registered: status.is_registered,
         agent_id: status.agent_id.map(|id| id.to_string()),
         org_id: status.org_id.map(|id| id.to_string()),
-        server_url: std::env::var("CLOUD_SERVER_URL")
-            .unwrap_or_else(|_| "https://api.accone.vn".to_string()),
+        server_url: crate::constants::get_cloud_url(),
         last_heartbeat: status.last_heartbeat.map(|dt| dt.to_rfc3339()),
         last_sync: status.last_sync.map(|dt| dt.to_rfc3339()),
         heartbeat_count: status.heartbeat_count,
