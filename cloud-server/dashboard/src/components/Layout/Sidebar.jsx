@@ -8,6 +8,7 @@ import {
     Shield,
     LogOut,
     ChevronRight,
+    Key,
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -15,6 +16,7 @@ const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/agents', icon: Monitor, label: 'Agents' },
     { path: '/incidents', icon: AlertTriangle, label: 'Incidents' },
+    { path: '/tokens', icon: Key, label: 'Tokens' },
     { path: '/policies', icon: FileText, label: 'Policies' },
     { path: '/reports', icon: FileText, label: 'Reports' },
     { path: '/settings', icon: Settings, label: 'Settings' },

@@ -5,6 +5,7 @@ import Sidebar from './components/Layout/Sidebar';
 // Pages
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import TokensPage from './pages/Tokens';
 
 // Styles
 import './styles/index.css';
@@ -89,6 +90,7 @@ function App() {
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/incidents" element={<IncidentsPage />} />
             <Route path="/policies" element={<PoliciesPage />} />
+            <Route path="/tokens" element={<TokensPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>

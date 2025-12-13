@@ -256,3 +256,19 @@ export default {
     getOrganization,
     getOrganizationUsers,
 };
+
+// Generic API helper object for dynamic endpoints
+export const api = {
+    get: (endpoint) => apiRequest(`/api/v1${endpoint}`),
+    post: (endpoint, data) => apiRequest(`/api/v1${endpoint}`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+    }),
+    put: (endpoint, data) => apiRequest(`/api/v1${endpoint}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    }),
+    delete: (endpoint) => apiRequest(`/api/v1${endpoint}`, {
+        method: 'DELETE',
+    }),
+};
