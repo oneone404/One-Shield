@@ -389,7 +389,7 @@ impl std::fmt::Display for CloudError {
 impl std::error::Error for CloudError {}
 
 /// Get OS version string
-fn get_os_version() -> String {
+pub fn get_os_version() -> String {
     #[cfg(target_os = "windows")]
     {
         use std::process::Command;

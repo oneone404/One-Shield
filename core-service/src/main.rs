@@ -252,6 +252,12 @@ fn main() {
             cloud_sync::update_cloud_sync_config,
             cloud_sync::queue_incident_for_sync,
             cloud_sync::get_pending_incidents_count,
+
+            // Personal Auth Commands (Phase 13)
+            cloud_sync::get_agent_mode,
+            cloud_sync::personal_enroll,
+            cloud_sync::has_user_jwt,
+            cloud_sync::get_user_jwt,
         ])
         .run(tauri::generate_context!())
         .expect("Lỗi khi khởi chạy ứng dụng Tauri");

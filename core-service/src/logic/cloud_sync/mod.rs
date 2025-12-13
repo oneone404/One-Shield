@@ -41,3 +41,46 @@ pub(crate) fn set_status(status: SyncStatus) {
 pub fn init() {
     log::info!("Cloud Sync module initialized");
 }
+
+// ==========================================
+// Agent Mode Detection (Phase 13)
+// ==========================================
+
+/// Agent operating mode
+/// Determines how the agent authenticates and whether login UI is shown
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AgentMode {
+    /// Organization mode: Has enrollment token, no login UI
+    /// Used by enterprise deployments
+    Organization,
+    /// Personal mode: Needs user login/register
+    /// Used by individual users (Free/Pro)
+    Personal,
+}
+
+impl AgentMode {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            AgentMode::Organization => "organization",
+            AgentMode::Personal => "personal",
+        }
+    }
+}
+
+/// Detect agent mode based on enrollment token presence
+///
+/// Rule:
+/// - Has enrollment token → Organization mode (no login UI)
+/// - No enrollment token → Personal mode (show login UI)
+pub fn detect_mode() -> AgentMode {
+    if crate::constants::get_enrollment_token_any().is_some() {
+        AgentMode::Organization
+    } else {
+        AgentMode::Personal
+    }
+}
+
+/// Check if agent needs user login
+pub fn needs_login() -> bool {
+    detect_mode() == AgentMode::Personal
+}

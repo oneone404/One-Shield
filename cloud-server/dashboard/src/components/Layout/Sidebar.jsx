@@ -9,14 +9,26 @@ import {
     LogOut,
     ChevronRight,
     Key,
+    Users,
 } from 'lucide-react';
+import { useOrg } from '../../context/OrgContext';
 import './Sidebar.css';
 
-const navItems = [
+// Base nav items (always shown)
+const baseNavItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/agents', icon: Monitor, label: 'Agents' },
     { path: '/incidents', icon: AlertTriangle, label: 'Incidents' },
-    { path: '/tokens', icon: Key, label: 'Tokens' },
+];
+
+// Organization-only nav items
+const orgNavItems = [
+    { path: '/tokens', icon: Key, label: 'Tokens', feature: 'can_create_tokens' },
+    { path: '/users', icon: Users, label: 'Users', feature: 'can_manage_users' },
+];
+
+// Common nav items (always shown)
+const commonNavItems = [
     { path: '/policies', icon: FileText, label: 'Policies' },
     { path: '/reports', icon: FileText, label: 'Reports' },
     { path: '/settings', icon: Settings, label: 'Settings' },
@@ -24,6 +36,15 @@ const navItems = [
 
 export default function Sidebar() {
     const location = useLocation();
+    const { isOrganization, canCreateTokens, tier, loading } = useOrg();
+
+    // Build nav items based on tier
+    const navItems = [
+        ...baseNavItems,
+        // Only show org items for organization tier
+        ...(isOrganization ? orgNavItems : []),
+        ...commonNavItems,
+    ];
 
     return (
         <aside className="sidebar">
@@ -37,6 +58,17 @@ export default function Sidebar() {
                     </div>
                 </div>
             </div>
+
+            {/* Tier Badge */}
+            {!loading && tier && (
+                <div className="tier-badge-container">
+                    <span className={`tier-badge tier-${tier.replace('_', '-')}`}>
+                        {tier === 'organization' ? '🏢 Organization' :
+                            tier === 'personal_pro' ? '⭐ Pro' :
+                                tier === 'personal_free' ? '👤 Free' : tier}
+                    </span>
+                </div>
+            )}
 
             {/* Navigation */}
             <nav className="sidebar-nav">
@@ -79,3 +111,4 @@ export default function Sidebar() {
         </aside>
     );
 }
+

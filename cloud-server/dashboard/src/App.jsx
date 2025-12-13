@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { isAuthenticated } from './services/api';
+import { OrgProvider } from './context/OrgContext';
 import Sidebar from './components/Layout/Sidebar';
 
 // Pages
@@ -76,6 +77,16 @@ function SettingsPage() {
   );
 }
 
+// Users page (Organization only)
+function UsersPage() {
+  return (
+    <div style={{ padding: '2rem' }}>
+      <h1>Users</h1>
+      <p>Manage organization users...</p>
+    </div>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -85,12 +96,18 @@ function App() {
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route element={<MainLayout />}>
+          {/* OrgProvider wraps protected routes for feature gating */}
+          <Route element={
+            <OrgProvider>
+              <MainLayout />
+            </OrgProvider>
+          }>
             <Route path="/" element={<Dashboard />} />
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/incidents" element={<IncidentsPage />} />
             <Route path="/policies" element={<PoliciesPage />} />
             <Route path="/tokens" element={<TokensPage />} />
+            <Route path="/users" element={<UsersPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
