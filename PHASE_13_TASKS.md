@@ -1,9 +1,83 @@
 # Phase 13: Authentication & Product Workflow
 
-> **Mục tiêu**: Phân tách rõ ràng luồng Personal (Free/Pro) vs Organization (Enterprise)
+> **Mục tiêu**: Phân tách rõ ràng luồng Personal (Free/Pro) vs Organization
 > **Effort**: ~8-12 giờ
 > **Priority**: 🔴 HIGH (Core product architecture)
 > **Last Updated**: 2025-12-13
+
+---
+
+## ⚠️ DESIGN DECISIONS & NOTES
+
+### 1️⃣ OrgTier: Chỉ 3 tier (KHÔNG tách Enterprise)
+
+```rust
+// ✅ SIMPLIFIED - Không tách Organization vs Enterprise
+enum OrgTier {
+    PersonalFree,   // 1 device, free
+    PersonalPro,    // 10 devices, $9/mo
+    Organization,   // Unlimited, enterprise-like
+}
+```
+
+📌 **Lý do**:
+- Chưa có billing enterprise thật
+- Tách sớm → rối logic
+- Sau này tách lại KHÔNG khó
+- Organization = enterprise ở Phase 13
+
+---
+
+### 2️⃣ require_admin: PHẢI dùng helper function chung
+
+```rust
+// ❌ KHÔNG inline check
+if user.role != "admin" { ... }
+
+// ✅ LUÔN dùng helper
+require_admin(&user)?;
+```
+
+📌 **Lý do**:
+- Audit dễ hơn (grep `require_admin`)
+- Không sót endpoint
+- Đổi RBAC không cần search-replace
+
+---
+
+### 3️⃣ /personal/enroll: Opinionated endpoint
+
+```
+⚠️ DISCLAIMER:
+/personal/enroll is an opinionated onboarding endpoint for DESKTOP APP ONLY.
+
+Nó làm nhiều việc:
+1. Login (if user exists)
+2. Register (if new user)
+3. Create personal org
+4. Attach agent
+5. Enforce device limit
+
+KHÔNG dùng cho:
+- Web-only signup
+- Mobile app
+- API integrations
+```
+
+---
+
+### 4️⃣ OUT OF SCOPE (Phase 14+)
+
+🔴 **ĐỪNG làm trong Phase 13**:
+
+| Feature | Phase |
+|---------|-------|
+| SSO / SAML | 14 |
+| Magic install link | 14 |
+| Team invitation UI | 14 |
+| Billing engine thật | 14 |
+| Offline mode | 15 |
+| Mobile app | Future |
 
 ---
 
@@ -177,7 +251,7 @@ if enrollment_token.exists() {
 | **Users Tab** | ❌ Hidden | ❌ Hidden | ✅ Yes |
 | **Audit Logs** | ❌ | ❌ | ✅ |
 | **API Access** | ❌ | ❌ | ✅ |
-| **SSO/SAML** | ❌ | ❌ | ✅ Optional |
+| **SSO/SAML** | ❌ | ❌ | ❌ (Phase 14) |
 | **Price** | Free | $9/mo | Contract |
 
 ---
@@ -213,35 +287,40 @@ pub fn require_admin(user: &UserContext) -> Result<(), AppError> {
 **File**: `cloud-server/src/models/organization.rs`
 
 ```rust
+// ⚠️ SIMPLIFIED: Chỉ 3 tier, KHÔNG tách Enterprise
 #[derive(Debug, Clone, PartialEq)]
 pub enum OrgTier {
-    PersonalFree,
-    PersonalPro,
-    Organization,
-    Enterprise,
+    PersonalFree,   // 1 device, free
+    PersonalPro,    // 10 devices, $9/mo
+    Organization,   // Unlimited, enterprise-like (Phase 13)
 }
 
 impl Organization {
     pub fn tier(&self) -> OrgTier {
-        match self.tier.as_str() {
+        match self.tier.as_deref().unwrap_or("personal_free") {
             "personal_free" => OrgTier::PersonalFree,
             "personal_pro" => OrgTier::PersonalPro,
-            "organization" => OrgTier::Organization,
-            "enterprise" => OrgTier::Enterprise,
+            "organization" | "enterprise" => OrgTier::Organization,
             _ => OrgTier::PersonalFree,
         }
     }
 
+    /// Only Organization tier can create enrollment tokens
     pub fn can_create_tokens(&self) -> bool {
-        matches!(self.tier(), OrgTier::Organization | OrgTier::Enterprise)
+        self.tier() == OrgTier::Organization
     }
 
     pub fn max_devices(&self) -> i32 {
         match self.tier() {
             OrgTier::PersonalFree => 1,
             OrgTier::PersonalPro => 10,
-            _ => self.max_agents.unwrap_or(1000),
+            OrgTier::Organization => self.max_agents.unwrap_or(1000),
         }
+    }
+
+    /// Check if tier is personal (Free or Pro)
+    pub fn is_personal(&self) -> bool {
+        matches!(self.tier(), OrgTier::PersonalFree | OrgTier::PersonalPro)
     }
 }
 ```
@@ -259,8 +338,19 @@ impl Organization {
 **File**: `cloud-server/src/handlers/auth.rs`
 
 ```rust
-// POST /api/v1/personal/enroll
-// For personal users signing up via the app
+// ╔══════════════════════════════════════════════════════════════╗
+// ║   POST /api/v1/personal/enroll                                ║
+// ║   ⚠️ OPINIONATED ENDPOINT - Desktop App Only                  ║
+// ║                                                               ║
+// ║   This endpoint does multiple things:                         ║
+// ║   1. Login (if user exists)                                   ║
+// ║   2. Register (if new user)                                   ║
+// ║   3. Create personal org                                      ║
+// ║   4. Attach agent to org                                      ║
+// ║   5. Enforce device limit per tier                            ║
+// ║                                                               ║
+// ║   DO NOT use for: web signup, mobile, API integrations        ║
+// ╚══════════════════════════════════════════════════════════════╝
 #[derive(Deserialize)]
 pub struct PersonalEnrollRequest {
     pub email: String,
@@ -570,13 +660,15 @@ pub struct OrgFeatures {
 
 ```jsx
 // Conditionally render routes based on org tier
+// ⚠️ Note: 'organization' includes legacy 'enterprise' values
 
 function App() {
   const { org, loading } = useOrg();
 
   if (loading) return <Loading />;
 
-  const isOrg = org?.tier === 'organization' || org?.tier === 'enterprise';
+  // Organization tier check (includes legacy 'enterprise')
+  const isOrg = ['organization', 'enterprise'].includes(org?.tier);
 
   return (
     <Routes>
@@ -585,7 +677,7 @@ function App() {
       <Route path="/devices" element={<Devices />} />
       <Route path="/incidents" element={<Incidents />} />
 
-      {/* Organization only */}
+      {/* Organization only - hidden for Personal tier */}
       {isOrg && (
         <>
           <Route path="/tokens" element={<Tokens />} />
@@ -594,7 +686,7 @@ function App() {
         </>
       )}
 
-      {/* Settings (all) */}
+      {/* Settings (all tiers) */}
       <Route path="/settings" element={<Settings />} />
     </Routes>
   );
@@ -731,15 +823,15 @@ export const useOrg = () => useContext(OrgContext);
 **File**: `cloud-server/src/handlers/tokens.rs`
 
 ```rust
+use crate::middleware::auth::require_admin;
+
 pub async fn create_token(
     State(state): State<AppState>,
     user: UserContext,
     Json(req): Json<CreateTokenRequest>,
 ) -> AppResult<Json<CreateTokenResponse>> {
-    // Check admin role
-    if user.role != "admin" {
-        return Err(AppError::Forbidden);
-    }
+    // ✅ Use helper function - NOT inline check
+    require_admin(&user)?;
 
     // Check org tier can create tokens
     let org = Organization::get_by_id(&state.pool, user.org_id).await?
@@ -757,9 +849,25 @@ pub async fn revoke_token(
     user: UserContext,
     Path(token_id): Path<Uuid>,
 ) -> AppResult<Json<serde_json::Value>> {
-    // Check admin role
-    if user.role != "admin" {
-        return Err(AppError::Forbidden);
+    // ✅ Use helper function - NOT inline check
+    require_admin(&user)?;
+
+    // ... rest of handler
+}
+
+pub async fn list_tokens(
+    State(state): State<AppState>,
+    user: UserContext,
+) -> AppResult<Json<Vec<TokenInfo>>> {
+    // Note: list_tokens có thể cho viewer xem, chỉ create/revoke cần admin
+    // HOẶC check tier nếu muốn ẩn hoàn toàn
+
+    let org = Organization::get_by_id(&state.pool, user.org_id).await?
+        .ok_or(AppError::NotFound("Organization not found".into()))?;
+
+    if !org.can_create_tokens() {
+        // Personal tier: return empty list instead of 403 (better UX)
+        return Ok(Json(vec![]));
     }
 
     // ... rest of handler
