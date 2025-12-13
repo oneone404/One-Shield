@@ -272,8 +272,85 @@ pub async fn enroll(
 - [ ] 12.2.6 Create `enroll` handler
 - [ ] 12.2.7 Add `validate_enrollment_token` helper
 - [ ] 12.2.8 Add HWID duplicate check
-- [ ] 12.2.9 Add token usage increment
+- [ ] 12.2.9 Add token usage increment (ATOMIC!)
 - [ ] 12.2.10 Add route `/api/v1/agent/enroll`
+
+---
+
+### ⚠️ IMPORTANT: Race Condition Fix
+
+**Vấn đề**: Nếu 100 máy cùng enroll đúng 1 tích tắc, code kiểm tra `uses_count < max_uses` có thể bị race condition.
+
+```rust
+// ❌ Code lỗi (Race Condition):
+if token.uses_count < max {
+    // 2 requests có thể cùng pass check này
+    increment_token_usage(token.id).await?;  // Kết quả: 11 máy thay vì 10
+}
+```
+
+**Giải pháp**: Dùng **Atomic SQL** với `UPDATE ... WHERE ... RETURNING`:
+
+```sql
+-- ✅ Atomic increment với condition
+UPDATE organization_tokens
+SET uses_count = uses_count + 1
+WHERE id = $1
+  AND (max_uses IS NULL OR uses_count < max_uses)
+  AND is_active = true
+  AND (expires_at IS NULL OR expires_at > NOW())
+RETURNING id;
+
+-- Nếu RETURNING rỗng → Token đã hết lượt hoặc expired
+```
+
+**Rust implementation**:
+
+```rust
+/// Atomic token usage increment - Race-condition safe
+async fn try_use_token(pool: &PgPool, token_id: Uuid) -> Result<bool, sqlx::Error> {
+    let result = sqlx::query(
+        r#"
+        UPDATE organization_tokens
+        SET uses_count = uses_count + 1
+        WHERE id = $1
+          AND (max_uses IS NULL OR uses_count < max_uses)
+          AND is_active = true
+          AND (expires_at IS NULL OR expires_at > NOW())
+        RETURNING id
+        "#
+    )
+    .bind(token_id)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(result.is_some())
+}
+
+// Usage in enroll handler:
+pub async fn enroll(...) -> AppResult<Json<EnrollAgentResponse>> {
+    // 1. Lookup token (no increment yet)
+    let token = get_token_by_value(&state.pool, &req.enrollment_token).await?
+        .ok_or(AppError::Unauthorized)?;
+
+    // 2. Atomic: Try to use the token
+    if !try_use_token(&state.pool, token.id).await? {
+        // Token expired, revoked, or max uses reached
+        return Err(AppError::TokenExhausted);
+    }
+
+    // 3. Now safe to register agent
+    let endpoint = Endpoint::register(&state.pool, token.org_id, req).await?;
+
+    // ... rest of handler
+}
+```
+
+**Lợi ích**:
+- ✅ 100% race-condition safe
+- ✅ Một câu SQL query duy nhất
+- ✅ Check tất cả conditions cùng lúc (max_uses, active, expires_at)
+- ✅ Nếu fail → Rollback tự động (không có agent được tạo)
 
 ---
 
