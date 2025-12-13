@@ -1,0 +1,155 @@
+/* Loading Spinner Styles */
+
+/* Spinner */
+.spinner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner-ring {
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top-color: currentColor;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Sizes */
+.spinner-sm .spinner-ring {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+}
+
+.spinner-md .spinner-ring {
+    width: 24px;
+    height: 24px;
+    border-width: 2px;
+}
+
+.spinner-lg .spinner-ring {
+    width: 40px;
+    height: 40px;
+    border-width: 3px;
+}
+
+.spinner-xl .spinner-ring {
+    width: 64px;
+    height: 64px;
+    border-width: 4px;
+}
+
+/* Loading Button */
+.loading-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.loading-btn.is-loading {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.loading-btn .btn-spinner {
+    position: absolute;
+    color: currentColor;
+}
+
+.loading-btn .btn-text-hidden {
+    visibility: hidden;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: white;
+}
+
+.loading-message {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+/* Skeleton */
+.skeleton {
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.05) 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            rgba(255, 255, 255, 0.05) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: 6px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton-rect {
+    border-radius: 6px;
+}
+
+.skeleton-circle {
+    border-radius: 50%;
+}
+
+.skeleton-text {
+    border-radius: 4px;
+}
+
+/* Skeleton Card */
+.skeleton-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.skeleton-card-content {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Button Disabled State Enhancement */
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+button:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}

@@ -7,6 +7,7 @@ import Header from './components/Header'
 import ApprovalModal from './components/ApprovalModal'
 import AuthModal from './components/AuthModal'
 import WelcomeModal from './components/WelcomeModal'
+import { ToastProvider } from './components/Toast'
 
 // Pages
 import Dashboard from './pages/Dashboard'
@@ -222,4 +223,12 @@ function App() {
   )
 }
 
-export default App
+function AppWithProviders() {
+  return (
+    <ToastProvider>
+      <App />
+    </ToastProvider>
+  )
+}
+
+export default AppWithProviders
