@@ -24,6 +24,35 @@ pub struct UserContext {
     pub role: String,
 }
 
+impl UserContext {
+    /// Check if user has admin role
+    pub fn is_admin(&self) -> bool {
+        self.role == "admin"
+    }
+}
+
+/// RBAC: Require admin role
+/// Use this instead of inline `if user.role != "admin"` checks
+pub fn require_admin(user: &UserContext) -> Result<(), AppError> {
+    if !user.is_admin() {
+        tracing::warn!("Admin required but user {} has role '{}'", user.user_id, user.role);
+        return Err(AppError::Forbidden);
+    }
+    Ok(())
+}
+
+/// RBAC: Require specific role
+pub fn require_role(user: &UserContext, required_role: &str) -> Result<(), AppError> {
+    if user.role != required_role {
+        tracing::warn!(
+            "Role '{}' required but user {} has role '{}'",
+            required_role, user.user_id, user.role
+        );
+        return Err(AppError::Forbidden);
+    }
+    Ok(())
+}
+
 /// Agent context extracted from token
 #[derive(Debug, Clone)]
 pub struct AgentContext {

@@ -8,7 +8,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use crate::{AppError, AppResult, AppState};
-use crate::middleware::auth::UserContext;
+use crate::middleware::auth::{UserContext, require_admin};
 use crate::models::{CreateTokenRequest, OrganizationToken, TokenInfo};
 
 /// Response for creating a token
@@ -21,6 +21,7 @@ pub struct CreateTokenResponse {
 }
 
 /// List all tokens for the user's organization
+/// Note: Viewing tokens is allowed for all roles (admin and viewer)
 pub async fn list_tokens(
     State(state): State<AppState>,
     user: UserContext,
@@ -31,11 +32,15 @@ pub async fn list_tokens(
 }
 
 /// Create a new enrollment token
+/// Requires: Admin role
 pub async fn create_token(
     State(state): State<AppState>,
     user: UserContext,
     Json(req): Json<CreateTokenRequest>,
 ) -> AppResult<Json<CreateTokenResponse>> {
+    // RBAC: Admin only
+    require_admin(&user)?;
+
     let token = OrganizationToken::create(
         &state.pool,
         user.org_id,
@@ -53,7 +58,7 @@ pub async fn create_token(
         token.token
     );
 
-    tracing::info!("Token created: {} by user {}", token.id, user.user_id);
+    tracing::info!("Token created: {} by admin {}", token.id, user.user_id);
 
     Ok(Json(CreateTokenResponse {
         id: token.id,
@@ -64,6 +69,7 @@ pub async fn create_token(
 }
 
 /// Get token details
+/// Note: Viewing is allowed for all roles
 pub async fn get_token(
     State(state): State<AppState>,
     user: UserContext,
@@ -82,12 +88,16 @@ pub async fn get_token(
 }
 
 /// Revoke a token
+/// Requires: Admin role
 pub async fn revoke_token(
     State(state): State<AppState>,
     user: UserContext,
     Path(token_id): Path<Uuid>,
 ) -> AppResult<Json<serde_json::Value>> {
-    // First verify ownership
+    // RBAC: Admin only
+    require_admin(&user)?;
+
+    // Verify ownership
     let token = OrganizationToken::get_by_id(&state.pool, token_id)
         .await?
         .ok_or_else(|| AppError::NotFound("Token not found".to_string()))?;
@@ -98,10 +108,11 @@ pub async fn revoke_token(
 
     OrganizationToken::revoke(&state.pool, token_id).await?;
 
-    tracing::info!("Token revoked: {} by user {}", token_id, user.user_id);
+    tracing::info!("Token revoked: {} by admin {}", token_id, user.user_id);
 
     Ok(Json(serde_json::json!({
         "success": true,
         "message": "Token revoked successfully"
     })))
 }
+
