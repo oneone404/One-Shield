@@ -119,6 +119,26 @@ pub struct ErrorResponse {
     pub status: u16,
 }
 
+/// Enrollment request (Phase 12 - uses org token)
+#[derive(Debug, Serialize)]
+pub struct EnrollAgentRequest {
+    pub enrollment_token: String,
+    pub hwid: String,
+    pub hostname: String,
+    pub os_type: String,
+    pub os_version: String,
+    pub agent_version: String,
+}
+
+/// Enrollment response
+#[derive(Debug, Deserialize)]
+pub struct EnrollAgentResponse {
+    pub agent_id: Uuid,
+    pub agent_token: String,
+    pub org_id: Uuid,
+    pub org_name: String,
+}
+
 impl CloudClient {
     /// Create new cloud client
     pub fn new(config: CloudConfig) -> Self {
@@ -234,6 +254,53 @@ impl CloudClient {
             let error_text = response.text().await.unwrap_or_default();
             log::error!("Registration failed ({}): {}", status, error_text);
             Err(CloudError::RegistrationFailed(error_text))
+        }
+    }
+
+    /// Enroll agent using organization enrollment token (Phase 12)
+    /// This is the new, preferred method for registration
+    pub async fn enroll(&mut self, enrollment_token: &str, hwid: &str) -> Result<EnrollAgentResponse, CloudError> {
+        let url = format!("{}/api/v1/agent/enroll", self.config.server_url);
+
+        // Get system info
+        let hostname = hostname::get()
+            .map(|h| h.to_string_lossy().to_string())
+            .unwrap_or_else(|_| "unknown".to_string());
+
+        let request = EnrollAgentRequest {
+            enrollment_token: enrollment_token.to_string(),
+            hwid: hwid.to_string(),
+            hostname,
+            os_type: "Windows".to_string(),
+            os_version: get_os_version(),
+            agent_version: env!("CARGO_PKG_VERSION").to_string(),
+        };
+
+        log::info!("Enrolling agent with token: {}...", &enrollment_token[..enrollment_token.len().min(15)]);
+
+        let response = self.http_client
+            .post(&url)
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| CloudError::NetworkError(e.to_string()))?;
+
+        if response.status().is_success() {
+            let result: EnrollAgentResponse = response.json().await
+                .map_err(|e| CloudError::ParseError(e.to_string()))?;
+
+            // Save credentials
+            self.agent_id = Some(result.agent_id);
+            self.agent_token = Some(result.agent_token.clone());
+            self.org_id = Some(result.org_id);
+
+            log::info!("Agent enrolled successfully: {} (org: {})", result.agent_id, result.org_name);
+            Ok(result)
+        } else {
+            let status = response.status().as_u16();
+            let error_text = response.text().await.unwrap_or_default();
+            log::error!("Enrollment failed ({}): {}", status, error_text);
+            Err(CloudError::RegistrationFailed(format!("Enrollment failed: {}", error_text)))
         }
     }
 

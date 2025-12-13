@@ -63,3 +63,31 @@ pub fn is_cloud_sync_enabled() -> bool {
         .map(|s| s.to_lowercase() != "false" && s != "0")
         .unwrap_or(true)
 }
+
+/// Get enrollment token from environment variable
+/// Environment: ENROLLMENT_TOKEN
+pub fn get_enrollment_token() -> Option<String> {
+    std::env::var("ENROLLMENT_TOKEN").ok()
+}
+
+/// Read enrollment token from file
+/// File: %LOCALAPPDATA%\ai-security\enrollment_token.txt
+pub fn read_enrollment_token_from_file() -> Option<String> {
+    let data_dir = dirs::data_local_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("ai-security");
+
+    let token_file = data_dir.join("enrollment_token.txt");
+
+    std::fs::read_to_string(token_file)
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+/// Get enrollment token from env or file (Phase 12)
+/// Priority: 1. ENV, 2. File
+pub fn get_enrollment_token_any() -> Option<String> {
+    get_enrollment_token()
+        .or_else(read_enrollment_token_from_file)
+}
