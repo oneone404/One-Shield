@@ -1,4 +1,4 @@
-import { Search, Bell, Play, Square, Sun, Moon } from 'lucide-react'
+import { Search, Bell, Play, Square, Sun, Moon, LogIn, User } from 'lucide-react'
 import CloudStatus from './CloudStatus'
 
 export default function Header({
@@ -8,7 +8,9 @@ export default function Header({
     pendingActionsCount = 0,
     onShowPendingActions,
     theme,
-    onToggleTheme
+    onToggleTheme,
+    isAuthenticated = false,
+    onShowAuth
 }) {
     return (
         <header className="header">
@@ -51,6 +53,17 @@ export default function Header({
                     {pendingActionsCount > 0 && (
                         <span className="header-badge">{pendingActionsCount}</span>
                     )}
+                </button>
+
+                {/* Auth Button - Login/User */}
+                <button
+                    className={`header-btn ${isAuthenticated ? 'authenticated' : 'not-authenticated'}`}
+                    onClick={() => !isAuthenticated && onShowAuth && onShowAuth()}
+                    title={isAuthenticated ? 'Connected ✓' : 'Sign In'}
+                    style={isAuthenticated ? { cursor: 'default' } : {}}
+                >
+                    {isAuthenticated ? <User size={18} /> : <LogIn size={18} />}
+                    {!isAuthenticated && <span className="login-text">Sign In</span>}
                 </button>
 
                 {/* Start/Stop Monitoring */}

@@ -205,42 +205,18 @@ pub async fn start_sync_loop(config: SyncConfig) {
                     }
                 }
             } else {
-                // Fallback to legacy registration (for backwards compatibility)
-                log::info!("No enrollment token found, using legacy registration (HWID: {}...)", &hwid[..8]);
+                // Phase 13: Personal mode - wait for user login via AuthModal
+                // Do NOT use legacy registration anymore
+                log::info!("🔐 Personal mode detected, waiting for user login...");
+                log::info!("   HWID: {}...", &hwid[..8]);
+                log::info!("   Please login/register in the app to continue.");
 
-                match client.write().register_with_hwid(&hwid).await {
-                    Ok(result) => {
-                        log::info!("✅ Agent registered: {}", result.agent_id);
+                let mut status = super::get_status();
+                status.errors.push("Waiting for user authentication".to_string());
+                set_status(status);
 
-                        // Save identity to storage
-                        {
-                            let mut identity_mgr = get_identity_manager().write();
-                            if let Err(e) = identity_mgr.save_identity(
-                                result.agent_id,
-                                result.token.clone(),
-                                result.org_id,
-                                &config.server_url,
-                            ) {
-                                log::error!("Failed to save identity: {}", e);
-                            } else {
-                                log::info!("Identity saved to secure storage");
-                            }
-                        }
-
-                        let mut status = super::get_status();
-                        status.is_registered = true;
-                        status.agent_id = Some(result.agent_id);
-                        status.org_id = Some(result.org_id);
-                        set_status(status);
-                    }
-                    Err(e) => {
-                        log::error!("Failed to register agent: {}", e);
-                        let mut status = super::get_status();
-                        status.errors.push(format!("Registration failed: {}", e));
-                        set_status(status);
-                        // Don't return, keep trying in the loop
-                    }
-                }
+                // Stay in this state - the sync loop will continue but heartbeat will fail
+                // User needs to call personal_enroll() via AuthModal
             }
         }
     }
@@ -254,6 +230,27 @@ pub async fn start_sync_loop(config: SyncConfig) {
 
     loop {
         sleep(Duration::from_secs(5)).await;
+
+        // Check if identity was added (from personal_enroll)
+        if !client.read().is_registered() {
+            // Re-check identity file
+            let current = get_identity_manager().read().current().cloned();
+            if let Some(existing) = current {
+                log::info!("🔐 New identity detected from personal_enroll!");
+                log::info!("   Agent: {}", existing.agent_id);
+
+                // Set credentials on client
+                client.write().set_token(existing.agent_token.clone());
+
+                let mut status = super::get_status();
+                status.is_registered = true;
+                status.agent_id = Some(existing.agent_id);
+                status.org_id = Some(existing.org_id);
+                set_status(status);
+
+                log::info!("✅ Cloud sync activated!");
+            }
+        }
 
         // Heartbeat
         if heartbeat_timer.elapsed() >= heartbeat_interval {

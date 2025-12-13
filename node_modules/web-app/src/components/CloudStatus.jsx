@@ -41,14 +41,27 @@ export default function CloudStatus({ compact = false }) {
 
     // Compact mode - just an indicator in header
     if (compact) {
+        // Need both connected AND registered to show green
+        const isActive = status?.is_connected && status?.is_registered;
+        const needsLogin = !status?.is_registered && status?.errors?.some(e => e.includes('authentication'));
+
+        let title = 'Cloud: Checking...';
+        if (isActive) {
+            title = `Cloud: Connected (${status?.heartbeat_count || 0} heartbeats)`;
+        } else if (needsLogin) {
+            title = 'Cloud: Sign in required';
+        } else if (!status?.is_registered) {
+            title = 'Cloud: Not registered';
+        } else {
+            title = 'Cloud: Disconnected';
+        }
+
         return (
             <div
-                className={`cloud-status-compact ${status?.is_connected ? 'connected' : 'disconnected'}`}
-                title={status?.is_connected
-                    ? `Cloud: Connected (${status?.heartbeat_count || 0} heartbeats)`
-                    : 'Cloud: Disconnected'}
+                className={`cloud-status-compact ${isActive ? 'connected' : 'disconnected'}`}
+                title={title}
             >
-                {status?.is_connected ? (
+                {isActive ? (
                     <Cloud size={18} className="cloud-icon connected" />
                 ) : (
                     <CloudOff size={18} className="cloud-icon disconnected" />

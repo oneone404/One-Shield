@@ -69,17 +69,26 @@ function App() {
         await api.invoke('show_main_window');
 
         // Check if user needs to login (personal mode)
-        try {
-          const modeResult = await api.invoke('get_agent_mode');
-          if (modeResult.needs_login) {
-            setShowAuthModal(true);
-          } else {
-            setIsAuthenticated(true);
+        // Wait a bit for cloud sync to initialize identity
+        const checkAuth = async (retries = 3, delayMs = 1000) => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              await new Promise(r => setTimeout(r, delayMs));
+              const modeResult = await api.invoke('get_agent_mode');
+              if (!modeResult.needs_login) {
+                setIsAuthenticated(true);
+                return; // Already logged in
+              }
+              // If needs_login on last retry, show modal
+              if (i === retries - 1) {
+                setShowAuthModal(true);
+              }
+            } catch (e) {
+              console.warn('Auth check attempt failed:', e);
+            }
           }
-        } catch (e) {
-          // Fallback: assume not authenticated
-          console.warn('Could not check agent mode:', e);
-        }
+        };
+        checkAuth();
 
         // Auto-start Monitoring (v1.0 Experience)
         await api.startCollector();
@@ -165,6 +174,8 @@ function App() {
               onShowPendingActions={() => setShowApprovalModal(true)}
               theme={theme}
               onToggleTheme={toggleTheme}
+              isAuthenticated={isAuthenticated}
+              onShowAuth={() => setShowAuthModal(true)}
             />
 
             <div className="dashboard-container fade-in">
