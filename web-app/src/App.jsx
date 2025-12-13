@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import ApprovalModal from './components/ApprovalModal'
 import AuthModal from './components/AuthModal'
+import WelcomeModal from './components/WelcomeModal'
 
 // Pages
 import Dashboard from './pages/Dashboard'
@@ -28,6 +29,8 @@ function App() {
   })
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
+  const [userName, setUserName] = useState('')
 
   // Persist sidebar state
   useEffect(() => {
@@ -199,8 +202,20 @@ function App() {
           onClose={() => setShowAuthModal(false)}
           onSuccess={(result) => {
             setIsAuthenticated(true)
+            setUserName(result?.name || result?.email || '')
+            // Show welcome modal for new users
+            if (result?.is_new_user) {
+              setShowWelcome(true)
+            }
             console.log('Auth success:', result)
           }}
+        />
+
+        {/* Welcome Modal (Onboarding) */}
+        <WelcomeModal
+          isOpen={showWelcome}
+          onClose={() => setShowWelcome(false)}
+          userName={userName}
         />
       </div>
     </>
