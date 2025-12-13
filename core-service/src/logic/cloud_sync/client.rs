@@ -17,8 +17,10 @@ pub struct CloudConfig {
 impl Default for CloudConfig {
     fn default() -> Self {
         Self {
-            server_url: "http://localhost:8080".to_string(),
-            registration_key: "dev-agent-secret-change-in-production-789012".to_string(),
+            server_url: std::env::var("CLOUD_SERVER_URL")
+                .unwrap_or_else(|_| "https://api.accone.vn".to_string()),
+            registration_key: std::env::var("CLOUD_REGISTRATION_KEY")
+                .unwrap_or_else(|_| "dev-agent-secret-change-in-production-789012".to_string()),
             timeout_seconds: 30,
         }
     }

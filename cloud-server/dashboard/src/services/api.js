@@ -3,7 +3,8 @@
  * Connects to cloud-server backend
  */
 
-const API_BASE_URL = 'http://localhost:8080';
+// Read from environment variable, fallback to production URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.accone.vn';
 
 // Store token in memory (and localStorage for persistence)
 let authToken = localStorage.getItem('token') || null;
