@@ -99,6 +99,8 @@ fn create_router(state: AppState) -> Router {
         .route("/health", get(handlers::health::check))
         .route("/api/v1/auth/login", post(handlers::auth::login))
         .route("/api/v1/auth/register", post(handlers::auth::register))
+        // Personal enrollment (Phase 13 - desktop app login/register + agent)
+        .route("/api/v1/personal/enroll", post(handlers::auth::personal_enroll))
         // Agent registration (legacy - uses registration_key)
         .route("/api/v1/agent/register", post(handlers::agent::register))
         // Agent enrollment (new - uses org enrollment token)
