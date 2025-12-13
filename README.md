@@ -189,6 +189,19 @@
 | **Cloudflare Workers** | Dashboard CDN global | ✅ Deployed |
 | **SSL/HTTPS** | Auto-managed bởi Cloudflare | ✅ Active |
 
+### 🎨 UI/UX & Adoption (Phase 14 NEW!)
+
+| Feature | Mô tả | Status |
+|---------|-------|--------|
+| **AuthModal** | Personal login/register modal với glassmorphism | ✅ Hoàn thành |
+| **WelcomeModal** | Onboarding MVP - protection status confirmation | ✅ Hoàn thành |
+| **TierBadge** | Display subscription tier (Free/Pro/Org) in header | ✅ Hoàn thành |
+| **UpgradeBanner** | Upgrade CTA for Free users (dismissible 7 days) | ✅ Hoàn thành |
+| **Settings Account Tab** | Organization info, tier, logout button | ✅ Hoàn thành |
+| **CloudStatus Enhanced** | Shows registration state, not just connection | ✅ Hoàn thành |
+| **Identity Polling** | Sync loop detects new identity after login | ✅ Hoàn thành |
+| **E2E Verified** | Full flow: Register → Sync → Welcome → Dashboard | ✅ 2025-12-13 |
+
 ### 🔧 Configuration Files
 
 ```
