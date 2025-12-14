@@ -10,7 +10,7 @@ pub mod client;
 pub mod sync;
 
 pub use client::CloudClient;
-pub use sync::{start_sync_loop, SyncConfig, SyncStatus};
+pub use sync::{start_sync_loop, reload_credentials, SyncConfig, SyncStatus};
 
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;

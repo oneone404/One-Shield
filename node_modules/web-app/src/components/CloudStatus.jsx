@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { invoke } from '@tauri-apps/api/core'
+import api from '../services/tauriApi'
 import { Cloud, CloudOff, RefreshCw, Server, Wifi, WifiOff } from 'lucide-react'
 
 /**
@@ -19,7 +19,8 @@ export default function CloudStatus({ compact = false }) {
     // Fetch cloud status
     const fetchStatus = async () => {
         try {
-            const result = await invoke('get_cloud_sync_status')
+            const result = await api.invoke('get_cloud_sync_status')
+            if (!result) return
             setStatus(result)
             setError(null)
         } catch (err) {

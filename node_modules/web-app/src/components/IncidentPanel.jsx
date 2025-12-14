@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import api from '../services/tauriApi';
 import { ShieldAlert } from 'lucide-react';
 import '../styles/components/incident-panel.css';
 
@@ -24,12 +24,12 @@ export function IncidentPanel() {
 
     const refresh = async () => {
         try {
-            const list = await invoke('get_incidents');
+            const list = await api.invoke('get_incidents');
             setIncidents(list);
 
             // Auto refresh detail if selected
             if (selectedId) {
-                const d = await invoke('get_incident_detail', { id: selectedId });
+                const d = await api.invoke('get_incident_detail', { id: selectedId });
                 setDetail(d);
             }
         } catch (e) { console.error(e); }
@@ -45,7 +45,7 @@ export function IncidentPanel() {
         setSelectedId(id);
         setDetail(null); // Clear loading
         try {
-            const d = await invoke('get_incident_detail', { id });
+            const d = await api.invoke('get_incident_detail', { id });
             setDetail(d);
         } catch (e) { console.error(e); }
     };

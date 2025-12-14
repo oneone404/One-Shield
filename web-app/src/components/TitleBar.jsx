@@ -1,56 +1,75 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Minus, X, Square, Shield, Maximize } from 'lucide-react'
-import { invoke } from '@tauri-apps/api/core'
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import api from '../services/tauriApi'
 
 export default function TitleBar({ theme }) {
     const [isMaximized, setIsMaximized] = useState(false)
-    const appWindow = getCurrentWindow()
+    const appWindowRef = useRef(null)
 
     useEffect(() => {
-        const updateState = async () => {
-            try {
-                const max = await appWindow.isMaximized()
-                setIsMaximized(max)
-            } catch (e) { }
+        // Check if running in Tauri
+        if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__) {
+            return // Not in Tauri, skip window API
         }
-        updateState()
 
-        let unlisten = null
-        const setup = async () => {
+        // Dynamic import to avoid crash in browser
+        const initWindow = async () => {
             try {
-                unlisten = await appWindow.onResized(updateState)
-            } catch (e) { }
+                const { getCurrentWindow } = await import('@tauri-apps/api/window')
+                appWindowRef.current = getCurrentWindow()
+
+                const appWindow = appWindowRef.current
+                if (!appWindow) return
+
+                const updateState = async () => {
+                    try {
+                        const max = await appWindow.isMaximized()
+                        setIsMaximized(max)
+                    } catch (e) { }
+                }
+                updateState()
+
+                try {
+                    const unlisten = await appWindow.onResized(updateState)
+                    return unlisten
+                } catch (e) { }
+            } catch (e) {
+                console.warn('Failed to init window:', e)
+            }
         }
-        setup()
-        return () => { if (unlisten) unlisten() }
+
+        let cleanup = null
+        initWindow().then(unlisten => { cleanup = unlisten })
+        return () => { if (cleanup) cleanup() }
     }, [])
 
     // --- WINDOW CONTROLS ---
     const handleStartDrag = (e) => {
         // Only drag on left click
         if (e.button === 0) {
-            invoke('window_start_drag').catch(console.error)
+            api.invoke('window_start_drag').catch(console.error)
         }
     }
 
     const handleMinimize = (e) => {
         e.stopPropagation()
-        invoke('window_minimize').catch(console.error)
+        api.invoke('window_minimize').catch(console.error)
     }
 
     const handleToggleMaximize = async (e) => {
         e.stopPropagation()
         try {
-            await invoke('window_toggle_maximize')
-            const max = await appWindow.isMaximized()
-            setIsMaximized(max)
+            await api.invoke('window_toggle_maximize')
+            if (appWindowRef.current) {
+                const max = await appWindowRef.current.isMaximized()
+                setIsMaximized(max)
+            }
         } catch (e) { console.error(e) }
     }
 
     const handleClose = (e) => {
         e.stopPropagation()
-        invoke('window_close').catch(console.error)
+        api.invoke('window_close').catch(console.error)
     }
 
     const preventDrag = (e) => e.stopPropagation()

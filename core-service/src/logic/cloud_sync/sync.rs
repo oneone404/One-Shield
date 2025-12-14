@@ -50,8 +50,12 @@ pub struct SyncStatus {
     pub org_id: Option<Uuid>,
     pub last_heartbeat: Option<DateTime<Utc>>,
     pub last_sync: Option<DateTime<Utc>>,
+    pub last_success_sync: Option<DateTime<Utc>>,  // Hardening: last successful operation
     pub heartbeat_count: u64,
     pub incident_sync_count: u64,
+    pub consecutive_failures: u32,  // Hardening: track failures
+    pub next_retry_delay_secs: u64, // Hardening: current backoff delay
+    pub last_error_type: Option<String>, // Hardening: distinguish error types
     pub errors: Vec<String>,
     pub server_version: Option<String>,
 }
@@ -59,6 +63,52 @@ pub struct SyncStatus {
 /// Pending incidents queue
 static PENDING_INCIDENTS: once_cell::sync::Lazy<RwLock<Vec<SyncIncidentRequest>>> =
     once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
+
+/// Global cloud client for token updates
+static CLOUD_CLIENT: once_cell::sync::Lazy<RwLock<Option<Arc<RwLock<CloudClient>>>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(None));
+
+/// Reload cloud client credentials from identity storage
+/// Call this after login/logout to update the token
+pub fn reload_credentials() {
+    use crate::logic::identity::{self, IdentityState, get_identity_manager};
+
+    log::info!("Reloading cloud sync credentials...");
+
+    // Re-init identity
+    match identity::init() {
+        Ok(IdentityState::Loaded(identity)) => {
+            // Update client token if available
+            if let Some(client) = CLOUD_CLIENT.read().as_ref() {
+                client.write().set_token(identity.agent_token.clone());
+                log::info!("✅ Cloud client credentials reloaded: agent={}", identity.agent_id);
+
+                // Update status
+                let mut status = super::get_status();
+                status.is_registered = true;
+                status.is_connected = true;
+                status.agent_id = Some(identity.agent_id);
+                status.org_id = Some(identity.org_id);
+                set_status(status);
+            }
+        }
+        Ok(IdentityState::NeedsRegistration { .. }) => {
+            log::info!("Identity cleared, waiting for new login");
+            let mut status = super::get_status();
+            status.is_registered = false;
+            status.is_connected = false;
+            status.agent_id = None;
+            status.org_id = None;
+            set_status(status);
+        }
+        Ok(IdentityState::Invalid { .. }) => {
+            log::warn!("Identity invalid after reload");
+        }
+        Err(e) => {
+            log::error!("Failed to reload identity: {:?}", e);
+        }
+    }
+}
 
 /// Add incident to sync queue
 pub fn queue_incident(
@@ -108,6 +158,9 @@ pub async fn start_sync_loop(config: SyncConfig) {
     };
 
     let client = Arc::new(RwLock::new(CloudClient::new(cloud_config)));
+
+    // Save to global for credential reloading
+    *CLOUD_CLIENT.write() = Some(client.clone());
 
     // Initial status
     set_status(SyncStatus {
@@ -268,8 +321,12 @@ pub async fn start_sync_loop(config: SyncConfig) {
 
                         let mut status = super::get_status();
                         status.last_heartbeat = Some(Utc::now());
+                        status.last_success_sync = Some(Utc::now()); // Hardening
                         status.heartbeat_count += 1;
                         status.is_connected = true;
+                        status.consecutive_failures = 0; // Reset on success
+                        status.next_retry_delay_secs = 1; // Reset backoff
+                        status.last_error_type = None;
                         set_status(status);
 
                         // Handle commands
@@ -278,9 +335,50 @@ pub async fn start_sync_loop(config: SyncConfig) {
                         }
                     }
                     Err(e) => {
-                        log::warn!("Heartbeat failed: {}", e);
                         let mut status = super::get_status();
-                        status.is_connected = false;
+                        status.consecutive_failures += 1;
+
+                        // Classify error type for hardening
+                        let error_type = match &e {
+                            CloudError::Unauthorized => {
+                                // 401 = token expired, need re-login
+                                log::warn!("⚠️ Heartbeat 401 Unauthorized - token may be expired");
+                                "auth_expired".to_string()
+                            }
+                            CloudError::ServerError(code) if *code >= 500 => {
+                                // 5xx = server issue, will retry
+                                log::warn!("⚠️ Server error {}, will retry with backoff", code);
+                                format!("server_{}", code)
+                            }
+                            CloudError::NetworkError(_) => {
+                                // Network = temporary, will retry
+                                log::warn!("⚠️ Network unreachable, will retry");
+                                "network".to_string()
+                            }
+                            _ => {
+                                log::warn!("Heartbeat failed: {}", e);
+                                "other".to_string()
+                            }
+                        };
+
+                        status.last_error_type = Some(error_type.clone());
+
+                        // Exponential backoff: 1s -> 5s -> 30s -> 60s (max)
+                        let new_delay = match status.consecutive_failures {
+                            1 => 1,
+                            2 => 5,
+                            3 => 30,
+                            _ => 60,
+                        };
+                        status.next_retry_delay_secs = new_delay;
+
+                        // Server unreachable ≠ logout (hardening)
+                        // Only mark as disconnected if network/server error
+                        // 401 Unauthorized should trigger re-auth flow, not disconnect
+                        if error_type != "auth_expired" {
+                            status.is_connected = false;
+                        }
+
                         set_status(status);
                     }
                 }
@@ -305,7 +403,9 @@ pub async fn start_sync_loop(config: SyncConfig) {
                             log::info!("✅ Synced {} incidents", response.synced_count);
                             let mut status = super::get_status();
                             status.last_sync = Some(Utc::now());
+                            status.last_success_sync = Some(Utc::now()); // Hardening
                             status.incident_sync_count += response.synced_count as u64;
+                            status.consecutive_failures = 0; // Reset on success
                             set_status(status);
                         }
                         Err(e) => {

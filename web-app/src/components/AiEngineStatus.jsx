@@ -114,7 +114,8 @@ export default function AiEngineStatus() {
                         </div>
                         <button className="btn-export" onClick={async () => {
                             try {
-                                const msg = await invoke('export_dataset', { path: "" });
+                                const api = await import('../services/tauriApi');
+                                const msg = await api.invoke('export_dataset', { path: "" });
                                 alert(msg);
                             } catch (e) {
                                 alert("Export failed: " + e);

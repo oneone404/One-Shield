@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { invoke } from '@tauri-apps/api/core'
+import api from '../services/tauriApi'
 import { Crown, X, ExternalLink } from 'lucide-react'
 import './UpgradeBanner.css'
 
@@ -30,8 +30,8 @@ export default function UpgradeBanner() {
 
             // Check tier
             try {
-                const mode = await invoke('get_agent_mode')
-                if (mode.mode === 'personal' && mode.has_identity) {
+                const mode = await api.invoke('get_agent_mode')
+                if (mode && mode.mode === 'personal' && mode.has_identity) {
                     // Personal mode with identity = show upgrade
                     // TODO: Check if actually Free (not Pro)
                     setTier('personal_free')

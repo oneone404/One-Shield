@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core';
+import api from '../services/tauriApi';
 
 export async function getEngineStatus() {
-    return await invoke("get_engine_status");
+    return await api.invoke("get_engine_status");
 }

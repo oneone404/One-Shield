@@ -7,6 +7,7 @@ import Header from './components/Header'
 import ApprovalModal from './components/ApprovalModal'
 import AuthModal from './components/AuthModal'
 import WelcomeModal from './components/WelcomeModal'
+import LogoutModal from './components/LogoutModal'
 import { ToastProvider } from './components/Toast'
 
 // Pages
@@ -32,6 +33,7 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [userName, setUserName] = useState('')
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [cloudConnected, setCloudConnected] = useState(null) // null = unknown, true/false = status
@@ -139,6 +141,10 @@ function App() {
             try {
               await new Promise(r => setTimeout(r, delayMs));
               const modeResult = await api.invoke('get_agent_mode');
+              if (!modeResult) {
+                console.warn('get_agent_mode returned null');
+                continue;
+              }
               if (!modeResult.needs_login) {
                 setIsAuthenticated(true);
                 return; // Already logged in
@@ -211,7 +217,7 @@ function App() {
     switch (activePage) {
       case 'dashboard': return <Dashboard isMonitoring={isMonitoring} />
       case 'executive': return <ExecutiveDashboard />
-      case 'settings': return <Settings />
+      case 'settings': return <Settings onLogout={() => setShowLogoutModal(true)} isAuthenticated={isAuthenticated} />
       default: return <PagePlaceholder title={getPageTitle()} />
     }
   }
@@ -241,6 +247,8 @@ function App() {
               onToggleTheme={toggleTheme}
               isAuthenticated={isAuthenticated}
               onShowAuth={() => setShowAuthModal(true)}
+              onLogout={() => setShowLogoutModal(true)}
+              onNavigate={setActivePage}
             />
 
             <div className="dashboard-container fade-in">
@@ -281,6 +289,20 @@ function App() {
           isOpen={showWelcome}
           onClose={() => setShowWelcome(false)}
           userName={userName}
+        />
+
+        {/* Logout Modal */}
+        <LogoutModal
+          isOpen={showLogoutModal}
+          onClose={() => setShowLogoutModal(false)}
+          onLogoutSuccess={() => {
+            // Reset auth state - no restart needed!
+            setIsAuthenticated(false)
+            setUserName('')
+            setCloudConnected(false)
+            toast.info('You have been logged out')
+            // User can click Sign In icon to login again
+          }}
         />
       </div>
     </>

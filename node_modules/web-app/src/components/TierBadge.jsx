@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { invoke } from '@tauri-apps/api/core'
+import api from '../services/tauriApi'
 import { Crown, User, Building2 } from 'lucide-react'
 import './TierBadge.css'
 
@@ -19,7 +19,8 @@ export default function TierBadge({ compact = false }) {
     useEffect(() => {
         const fetchTier = async () => {
             try {
-                const mode = await invoke('get_agent_mode')
+                const mode = await api.invoke('get_agent_mode')
+                if (!mode) return
 
                 // Determine tier from mode
                 if (mode.mode === 'organization') {

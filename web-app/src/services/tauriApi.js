@@ -107,6 +107,64 @@ function getMockResponse(cmd, args) {
                 ready: true,
             }
         },
+        // Auth/Cloud Sync (Phase 13)
+        get_agent_mode: {
+            mode: 'personal',
+            needs_login: false,
+            has_identity: true,
+            org_name: 'Mock User'
+        },
+        get_cloud_sync_status: {
+            is_connected: true,
+            is_registered: true,
+            agent_id: 'mock-agent-id',
+            org_id: 'mock-org-id',
+        },
+        show_main_window: true,
+        // Window controls
+        window_start_drag: true,
+        window_minimize: true,
+        window_toggle_maximize: true,
+        window_close: true,
+        // Auth commands
+        personal_enroll: {
+            success: true,
+            user_id: 'mock-user-id',
+            agent_id: 'mock-agent-id',
+            org_name: 'Mock User',
+            tier: 'personal_free',
+            is_new_user: false,
+            error: null
+        },
+        user_logout: {
+            success: true,
+            needs_restart: false
+        },
+        // Incidents
+        get_incidents: [],
+        get_incident_detail: null,
+        // Engine status
+        get_engine_status: {
+            feature_version: 15,
+            layout_hash: 0x3ff95e3f,
+            model: {
+                loaded: true,
+                engine: 'ONNX',
+                model_version: '2.0.0',
+                trained_on_records: 50000
+            },
+            baseline: {
+                mode: 'Stable',
+                samples: 290,
+                last_reset_reason: null
+            },
+            dataset: {
+                total_records: 1000,
+                benign_count: 900,
+                suspicious_count: 80,
+                malicious_count: 20
+            }
+        },
     };
 
     return Promise.resolve(mocks[cmd] ?? null);
@@ -580,7 +638,10 @@ export async function clearIatCache() {
 }
 
 
+
 export default {
+    // Core invoke function
+    invoke,
     // System
     getSystemStatus,
     getCpuUsage,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import api from '../services/tauriApi';
 import {
     Shield, Activity, CheckCircle, XCircle, AlertTriangle,
     FileText, TrendingUp, Clock, Eye, RefreshCw
@@ -22,10 +22,10 @@ export default function SecurityLogs() {
         setLoading(true);
         try {
             const [analyticsData, statsData, eventsData, filesData] = await Promise.all([
-                invoke('get_security_analytics').catch(() => null),
-                invoke('get_telemetry_stats').catch(() => null),
-                invoke('get_recent_security_events', { limit: 50 }).catch(() => ({ events: [] })),
-                invoke('get_security_log_files').catch(() => []),
+                api.invoke('get_security_analytics').catch(() => null),
+                api.invoke('get_telemetry_stats').catch(() => null),
+                api.invoke('get_recent_security_events', { limit: 50 }).catch(() => ({ events: [] })),
+                api.invoke('get_security_log_files').catch(() => []),
             ]);
 
             setAnalytics(analyticsData);

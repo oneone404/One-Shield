@@ -1,6 +1,7 @@
-import { Search, Bell, Play, Square, Sun, Moon, LogIn, User } from 'lucide-react'
+import { Search, Bell, Play, Square, Sun, Moon, LogIn } from 'lucide-react'
 import CloudStatus from './CloudStatus'
 import TierBadge from './TierBadge'
+import UserMenu from './UserMenu'
 
 export default function Header({
     title = 'Dashboard',
@@ -11,7 +12,9 @@ export default function Header({
     theme,
     onToggleTheme,
     isAuthenticated = false,
-    onShowAuth
+    onShowAuth,
+    onLogout,
+    onNavigate
 }) {
     return (
         <header className="header">
@@ -59,16 +62,23 @@ export default function Header({
                     )}
                 </button>
 
-                {/* Auth Button - Login/User */}
-                <button
-                    className={`header-btn ${isAuthenticated ? 'authenticated' : 'not-authenticated'}`}
-                    onClick={() => !isAuthenticated && onShowAuth && onShowAuth()}
-                    title={isAuthenticated ? 'Connected ✓' : 'Sign In'}
-                    style={isAuthenticated ? { cursor: 'default' } : {}}
-                >
-                    {isAuthenticated ? <User size={18} /> : <LogIn size={18} />}
-                    {!isAuthenticated && <span className="login-text">Sign In</span>}
-                </button>
+                {/* Auth Button or User Menu */}
+                {isAuthenticated ? (
+                    <UserMenu
+                        isAuthenticated={isAuthenticated}
+                        onLogout={onLogout}
+                        onNavigate={onNavigate}
+                    />
+                ) : (
+                    <button
+                        className="header-btn not-authenticated"
+                        onClick={onShowAuth}
+                        title="Sign In"
+                    >
+                        <LogIn size={18} />
+                        <span className="login-text">Sign In</span>
+                    </button>
+                )}
 
                 {/* Start/Stop Monitoring */}
                 <button

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Shield, Eye, EyeOff, Loader2, X, AlertCircle, CheckCircle } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
+import api from '../services/tauriApi';
 import './AuthModal.css';
 
 /**
@@ -18,6 +18,20 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(null);
+
+    // Reset form state when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setMode('login');
+            setEmail('');
+            setPassword('');
+            setName('');
+            setError('');
+            setSuccess(null);
+            setShowPassword(false);
+            setLoading(false);
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -44,13 +58,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
 
         try {
             // Call Tauri command
-            const result = await invoke('personal_enroll', {
+            const result = await api.invoke('personal_enroll', {
                 email: email.trim(),
                 password: password,
                 name: mode === 'register' && name.trim() ? name.trim() : null,
             });
 
-            if (result.success) {
+            if (result && result.success) {
                 setSuccess({
                     isNewUser: result.is_new_user,
                     orgName: result.org_name,

@@ -74,7 +74,7 @@ const UserIcon = () => (
     </svg>
 );
 
-export default function SettingsPage() {
+export default function SettingsPage({ onLogout, isAuthenticated }) {
     const [activeTab, setActiveTab] = useState('quarantine');
 
     return (
@@ -111,7 +111,7 @@ export default function SettingsPage() {
             <div className="settings-content">
                 {activeTab === 'quarantine' && <QuarantineSection />}
                 {activeTab === 'webhooks' && <WebhooksSection />}
-                {activeTab === 'account' && <AccountSection />}
+                {activeTab === 'account' && <AccountSection onLogout={onLogout} isAuthenticated={isAuthenticated} />}
             </div>
         </div>
     );
@@ -413,17 +413,20 @@ function WebhooksSection() {
 }
 
 // Account Section Component
-function AccountSection() {
+function AccountSection({ onLogout, isAuthenticated }) {
     const [accountInfo, setAccountInfo] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [loggingOut, setLoggingOut] = useState(false);
 
     useEffect(() => {
         const fetchAccountInfo = async () => {
+            setLoading(true);
             try {
-                const { invoke } = await import('@tauri-apps/api/core');
-                const mode = await invoke('get_agent_mode');
-
+                const api = await import('../services/tauriApi');
+                const mode = await api.invoke('get_agent_mode');
+                if (!mode) {
+                    setAccountInfo(null);
+                    return;
+                }
                 setAccountInfo({
                     mode: mode.mode,
                     hasIdentity: mode.has_identity,
@@ -433,45 +436,13 @@ function AccountSection() {
                 });
             } catch (e) {
                 console.error('Failed to fetch account info:', e);
+                setAccountInfo(null);
             } finally {
                 setLoading(false);
             }
         };
         fetchAccountInfo();
-    }, []);
-
-    const handleLogout = async () => {
-        if (!confirm('Are you sure you want to logout? You will need to restart the app.')) return;
-
-        setLoggingOut(true);
-
-        // Clear local storage flags
-        localStorage.removeItem('onboarding_complete');
-        localStorage.removeItem('upgrade_banner_dismissed');
-
-        try {
-            const { invoke } = await import('@tauri-apps/api/core');
-            const result = await invoke('user_logout');
-
-            if (result.success) {
-                // Show success and prompt restart
-                alert('Logged out successfully! Please close and restart the app.');
-                // Force close the window
-                try {
-                    const { exit } = await import('@tauri-apps/plugin-process');
-                    await exit(0);
-                } catch (e) {
-                    // Fallback: just show message
-                    console.log('App restart required');
-                }
-            }
-        } catch (e) {
-            console.error('Logout failed:', e);
-            alert('Logout failed: ' + e);
-        } finally {
-            setLoggingOut(false);
-        }
-    };
+    }, [isAuthenticated]); // Re-fetch when auth state changes
 
     const handleOpenDashboard = () => {
         window.open('https://dashboard.accone.vn', '_blank');
@@ -522,8 +493,8 @@ function AccountSection() {
                 <button className="btn-primary" onClick={handleOpenDashboard}>
                     Open Dashboard
                 </button>
-                <button className="btn-danger" onClick={handleLogout} disabled={loggingOut}>
-                    {loggingOut ? 'Logging out...' : 'Logout'}
+                <button className="btn-danger" onClick={onLogout}>
+                    Logout
                 </button>
             </div>
         </div>

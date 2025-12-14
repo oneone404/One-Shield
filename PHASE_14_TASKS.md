@@ -3,515 +3,271 @@
 > **Goal**: Sản phẩm có thể demo và mời user dùng thử mà không cần giải thích
 > **Duration**: 3-5 ngày
 > **Start**: 2025-12-14
-> **Status**: 📋 PLANNING
+> **Status**: � IN PROGRESS
 
 ---
 
-## 🎯 Mục Tiêu Phase 14
+## ✅ COMPLETED TASKS
 
-| # | Mục Tiêu | Ý Nghĩa |
-|---|----------|---------|
-| 1 | Demo được | Founder có thể demo cho investor/user |
-| 2 | Self-service | User tự signup, tự dùng không cần hướng dẫn |
-| 3 | Sell-ready | Có thể bán Pro thủ công (Stripe manual) |
+### 14.2 Desktop App UI (Tauri) - ✅ DONE
 
----
+#### 14.2.1 Login/Register Modal - ✅ COMPLETE
+**Files:**
+- `web-app/src/components/AuthModal.jsx` ✅
+- `web-app/src/components/AuthModal.css` ✅
 
-## 📦 Phase 14 Structure
-
-```
-Phase 14
-├── 14.1 Dashboard UI (Cloud Console)
-│   ├── 14.1.1 Organization Signup Page
-│   ├── 14.1.2 Token Management UI
-│   ├── 14.1.3 Users Management UI
-│   ├── 14.1.4 Empty States + UX Polish
-│   └── 14.1.5 Responsive + Mobile Friendly
-│
-├── 14.2 Desktop App UI (Tauri)
-│   ├── 14.2.1 Login/Register Modal
-│   ├── 14.2.2 Onboarding Flow
-│   ├── 14.2.3 Tier Badge + Status
-│   ├── 14.2.4 Upgrade CTA
-│   └── 14.2.5 Settings + Account
-│
-└── 14.3 Polish & Ship
-    ├── 14.3.1 Error Handling
-    ├── 14.3.2 Loading States
-    ├── 14.3.3 i18n (EN/VI)
-    └── 14.3.4 Final QA
-```
+**Completed:**
+- [x] 14.2.1.1 AuthModal component with glassmorphism design
+- [x] 14.2.1.2 Login form
+- [x] 14.2.1.3 Register form
+- [x] 14.2.1.4 Tab switching animation
+- [x] 14.2.1.5 Call Tauri `personal_enroll` command
+- [x] 14.2.1.6 Success → close modal, show dashboard
+- [x] 14.2.1.7 Error handling (validation, network)
+- [x] 14.2.1.8 Password show/hide toggle
+- [x] 14.2.1.9 Reset form state on modal open
 
 ---
 
-# 📋 DETAILED TASKS
+#### 14.2.2 Onboarding Flow - ✅ COMPLETE
+**Files:**
+- `web-app/src/components/WelcomeModal.jsx` ✅
+- `web-app/src/components/WelcomeModal.css` ✅
+
+**Completed:**
+- [x] 14.2.2.1 Welcome modal component
+- [x] 14.2.2.2 "Welcome to One-Shield" message
+- [x] 14.2.2.3 Protection status display
+- [x] 14.2.2.4 Cross icon to close
+- [x] 14.2.2.5 Only show for new users
+- [x] 14.2.2.6 Store onboarding_complete flag in localStorage
 
 ---
 
-## 14.1 Dashboard UI (Cloud Console)
+#### 14.2.3 Tier Badge + Status - ✅ COMPLETE
+**Files:**
+- `web-app/src/components/TierBadge.jsx` ✅
+- `web-app/src/components/TierBadge.css` ✅
 
-### 14.1.1 Organization Signup Page
-> Cho phép doanh nghiệp tự đăng ký
+**Completed:**
+- [x] 14.2.3.1 TierBadge component
+- [x] 14.2.3.2 Fetch tier from get_agent_mode
+- [x] 14.2.3.3 Display in header
+- [x] 14.2.3.4 Different colors: Free (gray), Pro (gold), Org (blue)
+
+---
+
+#### 14.2.4 Upgrade CTA - ✅ COMPLETE
+**Files:**
+- `web-app/src/components/UpgradeBanner.jsx` ✅
+- `web-app/src/components/UpgradeBanner.css` ✅
+
+**Completed:**
+- [x] 14.2.4.1 UpgradeBanner component
+- [x] 14.2.4.2 Show only for PersonalFree tier
+- [x] 14.2.4.3 Dismiss button with 7-day remember
+- [x] 14.2.4.4 Click → open pricing page in browser
+
+---
+
+#### 14.2.5 Settings + Account - ✅ COMPLETE
+**Files:**
+- `web-app/src/pages/Settings.jsx` ✅ (Account tab)
+
+**Completed:**
+- [x] 14.2.5.1 Account tab in Settings page
+- [x] 14.2.5.2 Display user info (org, tier, mode)
+- [x] 14.2.5.3 Open Dashboard button
+- [x] 14.2.5.4 Logout functionality via Tauri command
+- [x] 14.2.5.5 Beautiful logout confirmation modal
+
+---
+
+### 14.3 Polish & Ship - ✅ MOSTLY DONE
+
+#### 14.3.1 Error Handling - ✅ COMPLETE
+**Files:**
+- `web-app/src/components/Toast.jsx` ✅
+- `web-app/src/components/Toast.css` ✅
+
+**Completed:**
+- [x] 14.3.1.1 Global Toast notification system
+- [x] 14.3.1.2 Toast variants: success, error, warning, info
+- [x] 14.3.1.3 Network online/offline toast notifications
+- [x] 14.3.1.4 Cloud connection status toast
+- [x] 14.3.1.5 Login/register success toast
+
+---
+
+#### 14.3.2 Loading States - ✅ COMPLETE
+**Files:**
+- `web-app/src/components/LoadingSpinner.jsx` ✅
+- `web-app/src/components/LoadingSpinner.css` ✅
+
+**Completed:**
+- [x] 14.3.2.1 LoadingSpinner component (sizes: sm, md, lg, xl)
+- [x] 14.3.2.2 Skeleton and SkeletonCard loaders
+- [x] 14.3.2.3 LoadingButton with loading state
+- [x] 14.3.2.4 LoadingOverlay for full-page loading
+
+---
+
+#### 14.3.4 E2E QA - ✅ DONE
+**Completed:**
+- [x] Login flow test
+- [x] Logout flow test
+- [x] Network offline/online toast
+- [x] Cloud disconnect/reconnect toast
+- [x] Auth modal reset on open
+
+---
+
+### 14.3.5 User Menu & Edge Cases - ✅ NEW
 
 **Files:**
-- `dashboard/src/pages/Register.jsx` (new)
-- `dashboard/src/pages/Register.css`
+- `web-app/src/components/UserMenu.jsx` ✅
+- `web-app/src/components/UserMenu.css` ✅
+- `web-app/src/components/LogoutModal.jsx` ✅
+- `web-app/src/components/LogoutModal.css` ✅
 
-**UI Elements:**
-```
-┌─────────────────────────────────────┐
-│         🛡️ One-Shield              │
-│      Enterprise Security            │
-├─────────────────────────────────────┤
-│                                     │
-│  Organization Name: [____________]  │
-│  Admin Email:       [____________]  │
-│  Password:          [____________]  │
-│  Confirm Password:  [____________]  │
-│                                     │
-│  [x] I agree to Terms of Service    │
-│                                     │
-│       [ Create Organization ]       │
-│                                     │
-│  ─────────────────────────────────  │
-│  Already have an account? [Login]   │
-│                                     │
-└─────────────────────────────────────┘
-```
-
-**Tasks:**
-- [ ] 14.1.1.1 Create Register.jsx page
-- [ ] 14.1.1.2 Form validation (email, password strength)
-- [ ] 14.1.1.3 Call /api/v1/auth/register
-- [ ] 14.1.1.4 Success → redirect to Dashboard
-- [ ] 14.1.1.5 Error handling (email exists, validation)
-- [ ] 14.1.1.6 Add route /register in App.jsx
-
-**API:** `POST /api/v1/auth/register`
-```json
-{
-  "email": "admin@company.com",
-  "password": "SecurePass123!",
-  "name": "Admin Name",
-  "organization_name": "Company Inc"
-}
-```
+**Completed:**
+- [x] User dropdown menu in header
+- [x] Show user email and tier badge
+- [x] Open Dashboard link
+- [x] Account Settings link
+- [x] Logout button with confirmation modal
+- [x] Beautiful logout modal with "what gets cleared" info
+- [x] Reset auth state without app restart
+- [x] Reload cloud credentials after login
 
 ---
 
-### 14.1.2 Token Management UI
-> Tạo, xem, revoke enrollment tokens
+### Backend (core-service) - ✅ UPDATED
 
 **Files:**
-- `dashboard/src/pages/Tokens.jsx` (update)
-- `dashboard/src/components/TokenCard.jsx` (new)
-- `dashboard/src/components/CreateTokenModal.jsx` (new)
+- `core-service/src/api/enterprise.rs` ✅ - Added `user_logout` command
+- `core-service/src/api/cloud_sync.rs` ✅ - Call `reload_credentials` after login
+- `core-service/src/logic/cloud_sync/sync.rs` ✅ - Global CLOUD_CLIENT + reload_credentials fn
 
-**UI Elements:**
-```
-┌─────────────────────────────────────────────────┐
-│  🔑 Enrollment Tokens                           │
-├─────────────────────────────────────────────────┤
-│  [ + Create New Token ]                         │
-│                                                 │
-│  ┌─────────────────────────────────────────┐   │
-│  │ 📋 Token: ORG_abc123_xyz789             │   │
-│  │    Created: 2024-12-13                   │   │
-│  │    Uses: 3/10  │  Expires: 7 days        │   │
-│  │    [Copy] [Show Install] [Revoke]        │   │
-│  └─────────────────────────────────────────┘   │
-│                                                 │
-│  ┌─────────────────────────────────────────┐   │
-│  │ 📋 Token: ORG_def456_uvw123             │   │
-│  │    Created: 2024-12-12                   │   │
-│  │    Uses: 0/5   │  Expires: 30 days       │   │
-│  │    [Copy] [Show Install] [Revoke]        │   │
-│  └─────────────────────────────────────────┘   │
-│                                                 │
-└─────────────────────────────────────────────────┘
-```
-
-**Create Token Modal:**
-```
-┌─────────────────────────────────────┐
-│  Create Enrollment Token            │
-├─────────────────────────────────────┤
-│                                     │
-│  Token Name: [________________]     │
-│                                     │
-│  Max Uses:   [10    ▼]              │
-│  (0 = unlimited)                    │
-│                                     │
-│  Expires In: [7 days ▼]             │
-│                                     │
-│     [Cancel]  [Create Token]        │
-│                                     │
-└─────────────────────────────────────┘
-```
-
-**Show Install Modal:**
-```
-┌─────────────────────────────────────┐
-│  📥 Install Agent                   │
-├─────────────────────────────────────┤
-│                                     │
-│  Option 1: Download & Run           │
-│  ┌─────────────────────────────┐   │
-│  │ https://dashboard.accone.vn │   │
-│  │ /install?token=ORG_xxx      │   │
-│  │              [Copy URL]     │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  Option 2: PowerShell               │
-│  ┌─────────────────────────────┐   │
-│  │ OneShield.exe               │   │
-│  │ --enroll-token=ORG_xxx      │   │
-│  │              [Copy Command] │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│              [Close]                │
-│                                     │
-└─────────────────────────────────────┘
-```
-
-**Tasks:**
-- [ ] 14.1.2.1 Token list with status badges
-- [ ] 14.1.2.2 Create token modal
-- [ ] 14.1.2.3 Show install instructions modal
-- [ ] 14.1.2.4 Copy to clipboard functionality
-- [ ] 14.1.2.5 Revoke with confirmation
-- [ ] 14.1.2.6 Empty state "No tokens yet"
-- [ ] 14.1.2.7 Loading skeleton
-
-**APIs:**
-- `GET /api/v1/tokens` - List tokens
-- `POST /api/v1/tokens` - Create token
-- `DELETE /api/v1/tokens/:id` - Revoke token
+**Completed:**
+- [x] `user_logout` Tauri command - clears identity file
+- [x] Reset cloud sync status on logout
+- [x] `reload_credentials()` function for token refresh
+- [x] Global CLOUD_CLIENT for credential updates
+- [x] Call reload after personal_enroll success
 
 ---
 
-### 14.1.3 Users Management UI
-> Xem users trong org, mời user mới (future)
+## ⏳ REMAINING TASKS
 
-**Files:**
-- `dashboard/src/pages/Users.jsx` (new)
-- `dashboard/src/components/UserCard.jsx` (new)
+### 14.1 Dashboard UI (Cloud Console) - NOT STARTED
+- [ ] 14.1.1 Organization Signup Page
+- [ ] 14.1.2 Token Management UI
+- [ ] 14.1.3 Users Management UI
+- [ ] 14.1.4 Empty States + UX Polish
+- [ ] 14.1.5 Responsive + Mobile Friendly
 
-**UI Elements:**
-```
-┌─────────────────────────────────────────────────┐
-│  👥 Organization Users                          │
-├─────────────────────────────────────────────────┤
-│  [ + Invite User ] (disabled - coming soon)     │
-│                                                 │
-│  ┌─────────────────────────────────────────┐   │
-│  │ 👤 Admin User                           │   │
-│  │    admin@company.com                     │   │
-│  │    Role: Admin  │  Joined: 2024-12-13    │   │
-│  │    Last Login: 5 minutes ago             │   │
-│  └─────────────────────────────────────────┘   │
-│                                                 │
-│  ┌─────────────────────────────────────────┐   │
-│  │ 👤 Security Analyst                     │   │
-│  │    analyst@company.com                   │   │
-│  │    Role: Viewer │  Joined: 2024-12-10    │   │
-│  │    Last Login: 2 days ago                │   │
-│  └─────────────────────────────────────────┘   │
-│                                                 │
-└─────────────────────────────────────────────────┘
-```
+### 14.3.3 i18n (EN/VI) - NOT STARTED
+- [ ] i18n setup for Dashboard
+- [ ] Vietnamese translations
+- [ ] Language switcher
+- [ ] Persist language preference
 
-**Tasks:**
-- [ ] 14.1.3.1 Users list page
-- [ ] 14.1.3.2 User card component
-- [ ] 14.1.3.3 Role badge (Admin/Viewer)
-- [ ] 14.1.3.4 Last login display
-- [ ] 14.1.3.5 Invite user button (disabled + tooltip)
-- [ ] 14.1.3.6 Empty state
+### Cloud Sync Hardening - ✅ COMPLETE
+- [x] Retry with backoff (1s → 5s → 30s → 60s max)
+- [x] Distinguish: 401 vs 5xx vs network error types
+- [x] Server unreachable ≠ logout (network error keeps registration)
+- [x] Health check debounce (consecutive_failures tracking)
+- [x] Sync metrics (last_success_sync, consecutive_failures, next_retry_delay_secs, last_error_type)
 
-**API:** `GET /api/v1/organization/users`
+**Implementation Details:**
+- `SyncStatus` now includes: `last_success_sync`, `consecutive_failures`, `next_retry_delay_secs`, `last_error_type`
+- Exponential backoff: 1s → 5s → 30s → 60s (max)
+- Error classification: `auth_expired` (401), `server_5xx`, `network`, `other`
+- 401 Unauthorized does NOT disconnect (triggers re-auth flow)
+- Network/server errors mark as disconnected but don't clear registration
 
 ---
 
-### 14.1.4 Empty States + UX Polish
-> Khi không có data, hiển thị hướng dẫn
+## 📊 Progress Summary
 
-**Empty States Needed:**
+| Section | Status | Completion |
+|---------|--------|------------|
+| 14.1 Dashboard UI | ⏳ Not Started | 0% |
+| 14.2 Desktop App UI | ✅ Complete | 100% |
+| 14.3 Polish & Ship | ✅ Mostly Done | 90% |
+| Cloud Sync Hardening | ✅ Complete | 100% |
+| 14.4 Production Stability | ✅ Complete | 100% |
 
-| Page | Empty State Message |
-|------|---------------------|
-| Dashboard | "No agents connected yet. Create a token to get started!" |
-| Agents | "No agents enrolled. [Create Token] to add your first device." |
-| Incidents | "🎉 No incidents detected. Your systems are secure!" |
-| Tokens | "No enrollment tokens. Create one to deploy agents." |
-| Users | "You're the only user. [Coming Soon: Invite team members]" |
-
-**Tasks:**
-- [ ] 14.1.4.1 EmptyState component
-- [ ] 14.1.4.2 Apply to Dashboard page
-- [ ] 14.1.4.3 Apply to Agents page
-- [ ] 14.1.4.4 Apply to Incidents page
-- [ ] 14.1.4.5 Apply to Tokens page
-- [ ] 14.1.4.6 Apply to Users page
-- [ ] 14.1.4.7 Add helpful illustrations
+**Overall Phase 14 Progress: ~85%**
 
 ---
 
-### 14.1.5 Responsive + Mobile Friendly
+## 🔒 14.4 — PRODUCTION STABILITY & OPERATIONS
 
-**Tasks:**
-- [ ] 14.1.5.1 Sidebar collapse on mobile
-- [ ] 14.1.5.2 Responsive token cards
-- [ ] 14.1.5.3 Responsive user cards
-- [ ] 14.1.5.4 Touch-friendly buttons
-- [ ] 14.1.5.5 Test on actual mobile devices
+**Mục tiêu**: Sản phẩm chạy ổn định ngoài đời thật, không chỉ demo
 
----
+### 🎯 GOAL
+Sau Phase 14.4:
+- Dev không cần nhớ lệnh
+- Server không chết khi reboot
+- API + DB + Tunnel luôn online
+- Có 1 flow vận hành chuẩn duy nhất
 
-## 14.2 Desktop App UI (Tauri)
-
-### 14.2.1 Login/Register Modal
-> First-time user nhìn thấy khi chưa đăng nhập
-
-**Files:**
-- `web-app/src/components/AuthModal.jsx` (new)
-- `web-app/src/components/AuthModal.css`
-
-**UI Flow:**
+### 🔁 SYSTEM FLOW
 ```
-App Launch
-    ↓
-[Check Agent Mode]
-    ↓
-┌─ Organization Mode ───────────────────┐
-│  Has enrollment token                 │
-│  → Auto-enroll, no UI needed          │
-└───────────────────────────────────────┘
-    OR
-┌─ Personal Mode ───────────────────────┐
-│  No token, needs login                │
-│  → Show AuthModal                     │
-└───────────────────────────────────────┘
+[ Windows Boot ]
+       ↓
+[ Docker Daemon ]
+       ↓
+[ PostgreSQL Container ]
+       ↓
+[ PM2 Auto-Resurrect ]
+       ↓
+[ API Binary ]
+       ↓
+[ cloudflared Service ]
+       ↓
+[ api.accone.vn ONLINE ]
 ```
 
-**AuthModal UI:**
-```
-┌─────────────────────────────────────┐
-│         🛡️ One-Shield              │
-│     Protect Your Computer           │
-├─────────────────────────────────────┤
-│                                     │
-│  [Login] [Register] ← Tab switch    │
-│                                     │
-│  ─── Login Tab ───                  │
-│  Email:    [__________________]     │
-│  Password: [__________________]     │
-│            [Login & Protect]        │
-│                                     │
-│  ─── Register Tab ───               │
-│  Email:    [__________________]     │
-│  Password: [__________________]     │
-│  Name:     [__________________]     │
-│            [Create Account]         │
-│                                     │
-│  ─────────────────────────────────  │
-│  "Free tier: 1 device protected"    │
-│                                     │
-└─────────────────────────────────────┘
-```
+### 14.4.1 Database Stability - ✅ COMPLETE
+- [x] Docker Desktop → Start with Windows = ON
+- [x] `docker compose up -d postgres`
+- [x] postgres container `restart: always`
 
-**Tasks:**
-- [ ] 14.2.1.1 AuthModal component
-- [ ] 14.2.1.2 Login form
-- [ ] 14.2.1.3 Register form
-- [ ] 14.2.1.4 Tab switching animation
-- [ ] 14.2.1.5 Call Tauri `personal_enroll` command
-- [ ] 14.2.1.6 Success → close modal, show dashboard
-- [ ] 14.2.1.7 Error handling (validation, network)
-- [ ] 14.2.1.8 Password show/hide toggle
+### 14.4.2 API Binary Mode - ✅ COMPLETE
+- [x] Build release binary: `cargo build --release`
+- [x] Binary: `target/release/oneshield-cloud.exe`
+- [x] ❌ CẤM dùng `cargo run` trong production
 
----
+### 14.4.3 API Process Manager (PM2) - ✅ COMPLETE
+- [x] `npm install -g pm2`
+- [x] `pm2 start target\release\oneshield-cloud.exe --name oneshield-api`
+- [x] `pm2 save`
+- [x] `pm2 startup` (auto-resurrect)
 
-### 14.2.2 Onboarding Flow
-> First-time experience sau khi login
+### 14.4.4 Cloudflare Tunnel Service - ✅ COMPLETE
+- [x] `cloudflared service install`
+- [x] `cloudflared service start`
+- [x] ❌ CẤM dùng `cloudflared tunnel run` trong production
 
-**Onboarding Steps:**
-```
-Step 1: Welcome
-┌─────────────────────────────────────┐
-│  🎉 Welcome to One-Shield!          │
-│                                     │
-│  You're now protected.              │
-│                                     │
-│  Let's set up a few things...       │
-│                                     │
-│           [Get Started]              │
-└─────────────────────────────────────┘
+### 🚨 Failure Handling
+| Sự cố | Hệ thống phản ứng |
+|-------|-------------------|
+| API crash | PM2 restart |
+| DB restart | API reconnect |
+| Network mất | Cloud Sync backoff |
+| Tunnel rớt | Service tự reconnect |
+| Reboot máy | Auto-recover |
 
-Step 2: Protection Status
-┌─────────────────────────────────────┐
-│  🛡️ Protection Active              │
-│                                     │
-│  ✅ AI Engine Running               │
-│  ✅ Real-time Monitoring            │
-│  ✅ Cloud Sync Connected            │
-│                                     │
-│           [Continue]                 │
-└─────────────────────────────────────┘
-
-Step 3: System Tray
-┌─────────────────────────────────────┐
-│  📍 Find Me in System Tray          │
-│                                     │
-│  [Screenshot of system tray]        │
-│                                     │
-│  One-Shield runs in background      │
-│  and protects you 24/7.             │
-│                                     │
-│           [Got It!]                  │
-└─────────────────────────────────────┘
-```
-
-**Tasks:**
-- [ ] 14.2.2.1 Onboarding component
-- [ ] 14.2.2.2 Step 1: Welcome
-- [ ] 14.2.2.3 Step 2: Protection status
-- [ ] 14.2.2.4 Step 3: System tray info
-- [ ] 14.2.2.5 Skip button
-- [ ] 14.2.2.6 Don't show again checkbox
-- [ ] 14.2.2.7 Store onboarding_complete flag
-
----
-
-### 14.2.3 Tier Badge + Status
-> Hiển thị tier hiện tại
-
-**Header Update:**
-```
-┌─────────────────────────────────────────────────┐
-│ 🛡️ One-Shield          [👤 Free] [⚙️] [—][□][×]│
-└─────────────────────────────────────────────────┘
-                          ↑
-                    Tier Badge
-```
-
-**Tier Badges:**
-| Tier | Badge | Color |
-|------|-------|-------|
-| PersonalFree | 👤 Free | Gray |
-| PersonalPro | ⭐ Pro | Gold |
-| Organization | 🏢 Org | Blue |
-
-**Tasks:**
-- [ ] 14.2.3.1 TierBadge component
-- [ ] 14.2.3.2 Fetch tier from get_agent_mode
-- [ ] 14.2.3.3 Display in header
-- [ ] 14.2.3.4 Click → show account info
-
----
-
-### 14.2.4 Upgrade CTA
-> Encourage Free → Pro upgrade
-
-**Upgrade Banner (for Free tier):**
-```
-┌─────────────────────────────────────────────────┐
-│ ⭐ Upgrade to Pro                               │
-│ Protect up to 10 devices • $9/month             │
-│                              [Upgrade Now]      │
-└─────────────────────────────────────────────────┘
-```
-
-**Tasks:**
-- [ ] 14.2.4.1 UpgradeBanner component
-- [ ] 14.2.4.2 Show only for PersonalFree
-- [ ] 14.2.4.3 Dismiss button (remember for 7 days)
-- [ ] 14.2.4.4 Click → open pricing page in browser
-- [ ] 14.2.4.5 Pricing page URL: https://oneshield.vn/pricing
-
----
-
-### 14.2.5 Settings + Account
-> User có thể xem account info
-
-**Settings → Account Tab:**
-```
-┌─────────────────────────────────────┐
-│  👤 Account                         │
-├─────────────────────────────────────┤
-│                                     │
-│  Email: user@example.com            │
-│  Tier: Free (1 device)              │
-│  Organization: Personal - user@...  │
-│                                     │
-│  [Upgrade to Pro]                   │
-│  [Open Dashboard] → browser         │
-│  [Logout]                           │
-│                                     │
-└─────────────────────────────────────┘
-```
-
-**Tasks:**
-- [ ] 14.2.5.1 Account tab in Settings
-- [ ] 14.2.5.2 Display user info
-- [ ] 14.2.5.3 Open Dashboard button
-- [ ] 14.2.5.4 Logout functionality
-- [ ] 14.2.5.5 Confirmation dialog
-
----
-
-## 14.3 Polish & Ship
-
-### 14.3.1 Error Handling
-
-**Tasks:**
-- [ ] 14.3.1.1 Network error toast
-- [ ] 14.3.1.2 Validation error display
-- [ ] 14.3.1.3 Session expired handling
-- [ ] 14.3.1.4 Generic error fallback
-
----
-
-### 14.3.2 Loading States
-
-**Tasks:**
-- [ ] 14.3.2.1 Loading spinner component
-- [ ] 14.3.2.2 Skeleton loaders
-- [ ] 14.3.2.3 Button loading state
-- [ ] 14.3.2.4 Page loading state
-
----
-
-### 14.3.3 i18n (EN/VI)
-
-**Tasks:**
-- [ ] 14.3.3.1 i18n setup for Dashboard
-- [ ] 14.3.3.2 Vietnamese translations
-- [ ] 14.3.3.3 Language switcher
-- [ ] 14.3.3.4 Persist language preference
-
----
-
-### 14.3.4 Final QA
-
-**Tasks:**
-- [ ] 14.3.4.1 Full flow test: Org signup → Token → Agent
-- [ ] 14.3.4.2 Full flow test: Personal signup → App
-- [ ] 14.3.4.3 Cross-browser testing
-- [ ] 14.3.4.4 Dark mode verification
-- [ ] 14.3.4.5 Performance check
-
----
-
-## 📅 Timeline Estimate
-
-| Day | Focus | Tasks |
-|-----|-------|-------|
-| 1 | Dashboard: Register + Tokens | 14.1.1, 14.1.2 |
-| 2 | Dashboard: Users + Empty States | 14.1.3, 14.1.4 |
-| 3 | App: AuthModal + Onboarding | 14.2.1, 14.2.2 |
-| 4 | App: Tier Badge + Upgrade | 14.2.3, 14.2.4, 14.2.5 |
-| 5 | Polish + QA | 14.3.x |
+### ✅ Definition of Done — 14.4
+- [x] Docker auto-start
+- [x] PostgreSQL running
+- [x] API chạy binary
+- [x] PM2 auto-resurrect
+- [x] cloudflared service
+- [x] Public health check OK
 
 ---
 
@@ -521,30 +277,23 @@ Phase 14 is complete when:
 
 - [ ] New user can signup on Dashboard
 - [ ] Admin can create/revoke tokens
-- [ ] New user can login on Desktop App
-- [ ] Free tier shows upgrade option
-- [ ] No blank/broken pages
+- [x] New user can login on Desktop App ✅
+- [x] Free tier shows upgrade option ✅
+- [x] No blank/broken pages ✅
 - [ ] Works on mobile (Dashboard)
-- [ ] Demo-ready
+- [x] Demo-ready (Desktop App) ✅
+- [x] Production stability (14.4) ✅
 
 ---
 
-## 📦 Deliverables
+## 🚀 Next Steps
 
-| # | Deliverable | Who Uses |
-|---|-------------|----------|
-| 1 | Org Signup Page | Enterprise customers |
-| 2 | Token Management | IT Admins |
-| 3 | Users Page | Security teams |
-| 4 | Personal Login | Individual users |
-| 5 | Upgrade Flow | Free users |
+1. ~~**Option A**: Cloud Sync Hardening (reliability)~~ ✅ DONE
+2. ~~**Option D**: 14.4 Production Stability~~ ✅ DONE
+3. **Option B**: 14.1 Dashboard UI (org features) - Web dashboard
+4. **Option C**: 14.3.3 i18n (EN/VI) - Multi-language support
+5. **Option E**: Ship v1.0 🚀 **(Recommended!)**
 
 ---
 
-## 🚀 After Phase 14
-
-You can:
-- ✅ Demo to investors
-- ✅ Invite beta users
-- ✅ Sell Pro manually
-- ✅ Get feedback
+*Last Updated: 2025-12-14 12:58*

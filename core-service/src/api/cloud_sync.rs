@@ -308,6 +308,9 @@ pub async fn personal_enroll(
         if server_response.is_new_user { "new user" } else { "existing user" }
     );
 
+    // Reload cloud client credentials for sync loop
+    crate::logic::cloud_sync::sync::reload_credentials();
+
     PersonalEnrollResult {
         success: true,
         user_id: Some(server_response.user_id.to_string()),
